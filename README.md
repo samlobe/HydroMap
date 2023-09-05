@@ -13,48 +13,4 @@ Output = pdb file with dewetting free energies of each residue listed in the bet
 4. **Predict dewetting free energy from water angles and output new pdb**.
 5. **Color pdb by dewetting free energy**.
 
-## Installation requirements:
-
-- **GROMACS (Step 1)**:
-  - Load on Pod cluster:
-  - Install on personal computer (not required):
-
-- **OpenMM (Step 2)**:
-  - Install on Pod cluster:
-  - Install on personal computer (not required):
-
-- **Fortran compiled code (Step 3)**:
-  - Compile fortran library (waterlib.f90) on Pod cluster:
-  - Compile fortran library (waterlib.f90) on personal computer (not required):
-
-- **MDAnalysis for atom selection (Step 3)**:
-  - Install on Pod cluster:
-  - Install on personal computer (recommended):
-
-- **ChimeraX (Step 5)**:
-  - Don't install on Pod cluster.
-  - Install on your personal computer:
-
-> The `hydrophobicity_tutorial` folder is on Pod at `/home/lobo/hydrophobicity_tutorial`
-
-## Contents of hydrophobicity_tutorial:
-[List of contents you provided, formatted as a list or sub-sections]
-
-## Full Procedure:
-
-### STEP 1) Use GROMACS to build your system:
-[Detailed steps you provided, formatted with bullet points or ordered lists]
-
-### STEP 2) Use OpenMM to simulate your system for 10ns:
-[Detailed steps...]
-
-### STEP 3) Measure water angles around each residue:
-[Detailed steps...]
-
-### STEP 4) Predict dewetting free energy from water angles and output new pdb:
-[Detailed steps...]
-
-### STEP 5) Color pdb by dewetting free energy:
-[Detailed steps...]
-
-
+## [Click here for the complete tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) which includes detailed install instructions, the commands necessary for each step in the procedure, and some background info.
