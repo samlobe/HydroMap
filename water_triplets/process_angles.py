@@ -37,66 +37,6 @@ with open('sequence.txt', 'r') as file:
 
 script_dir = os.path.dirname(__file__) # absolute dir the script is in
 
-# fig, ax = plt.subplots(figsize=(8,7))
-# ### PLOT THE BULK WATER 3-BODY ANGLE DISTRIBUTION
-# bulk_file = f'{script_dir}/bulk_angles.txt'
-# bulk_angles, _ = read_angles(bulk_file)
-# bins, bulk_distro = histo_line(bulk_angles)
-# plt.plot(bins,bulk_distro,label='bulk',lw=6,color='black')
-# plt.ylim(bottom=0,top=0.018)
-# plt.xlim(left=40,right=180)
-# plt.xlabel(r'Water Triplet Angle ($\theta$)',fontsize=15)
-# plt.ylabel(r'$P(\theta)$',fontsize=15)
-
-#%% LOAD AND SAVE DATA
-# # get sidechain data
-# sidechain_distros = []
-# sidechain_names = []
-# avg_sidechain_angles_list = []
-# sidechain_counter = 0
-# print('Processing sidechain data...')
-# for resid in tqdm(np.arange(1,71)):
-#     # print(f'Looking at residue {resid}')
-#     sidechain_file = f'{script_dir}/sidechains/sc_res{resid}_angles.txt'
-#     if not os.path.exists(sidechain_file):
-#         continue
-    
-#     sidechain_names.append(f'{seq[resid-1]}{resid}_sidechain')
-#     sidechain_angles, avg_sidechain_angles = read_angles(sidechain_file)
-#     _, histo = histo_line(sidechain_angles)
-#     sidechain_distros.append(histo)
-#     avg_sidechain_angles_list.append(avg_sidechain_angles)
-#     sidechain_counter += 1
-
-# # turn into DataFrame
-# avg_sidechain_angles_list = np.array(avg_sidechain_angles_list).reshape(-1, 1)
-# sidechain_data = np.hstack((np.array(sidechain_distros), avg_sidechain_angles_list))
-# sidechain_df = pd.DataFrame(data=sidechain_data, index=sidechain_names, columns=np.append(bins, 'avg_sidechain_angles'))
-# sidechain_df.to_csv('sidechain_data.csv')
-
-# #%% get backbone data
-# backbone_distros = []
-# backbone_names = []
-# avg_backbone_angles_list = []
-# backbone_counter = 0
-# print('Processing backbone data...')
-# for resid in tqdm(np.arange(1,71)):
-#     backbone_file = f'{script_dir}/backbone/bb_res{resid}_angles.txt'
-#     if not os.path.exists(backbone_file):
-#         continue
-    
-#     backbone_names.append(f'{seq[resid-1]}{resid}_backbone')
-#     backbone_angles,avg_backbone_angles = read_angles(backbone_file)
-#     _, histo = histo_line(backbone_angles)
-#     backbone_distros.append(histo)
-#     avg_backbone_angles_list.append(avg_backbone_angles)
-#     backbone_counter += 1
-
-# # turn into DataFrame
-# avg_backbone_angles_list = np.array(avg_backbone_angles_list).reshape(-1, 1)
-# backbone_data = np.hstack((np.array(backbone_distros), avg_backbone_angles_list))
-# backbone_df = pd.DataFrame(data=backbone_data, index=backbone_names, columns=np.append(bins, 'avg_backbone_angles'))
-# backbone_df.to_csv('backbone_data.csv')
 
 #%% get residue data
 residue_distros = []
@@ -122,38 +62,6 @@ residue_data = np.hstack((np.array(residue_distros), avg_residue_angles_list))
 residue_df = pd.DataFrame(data=residue_data, index=residue_names, columns=np.append(bin_mids, 'avg_residue_angles'))
 residue_df.to_csv('residue_data.csv')
 
-
-#%% PLOT 3-BODY DISTRIBUTION
-# # for sidechains
-# for i,distro in enumerate(sidechain_distros):
-#     if avg_sidechain_angles_list[i] > 1:
-#         plt.plot(bins,distro,label=sidechain_names[i])
-# plt.plot(bins,bulk_distro,label='bulk',lw=6,color='black')
-# plt.ylim(bottom=0,top=0.02)
-# plt.xlim(left=40,right=180)
-# plt.title('Hydrophobin: Side Chains',fontsize=20)
-# plt.xlabel(r'Water Triplet Angle ($\theta$)',fontsize=15)
-# plt.ylabel(r'$P(\theta)$',fontsize=15)
-# plt.ylim(bottom=0)
-# plt.legend(fontsize=4,ncol=4)
-# leg = ileg()
-# plt.show()
-
-#%%
-# # for backbone
-# for i,distro in enumerate(backbone_distros):
-#     if avg_backbone_angles_list[i] > 1:
-#         plt.plot(bins,distro,label=backbone_names[i])
-# plt.plot(bins,bulk_distro,label='bulk',lw=6,color='black')
-# plt.ylim(bottom=0,top=0.02)
-# plt.xlim(left=40,right=180)
-# plt.title('Hydrophobin: Backbone',fontsize=20)
-# plt.xlabel(r'Water Triplet Angle ($\theta$)',fontsize=15)
-# plt.ylabel(r'$P(\theta)$',fontsize=15)
-# plt.ylim(bottom=0)
-# plt.legend(fontsize=4,ncol=4)
-# leg = ileg()
-# plt.show()
 
 #%% for full residue
 for i,distro in enumerate(residue_distros):
@@ -229,50 +137,3 @@ plt.show()
 # plt.xticks(fontsize=12)
 # plt.show()
 
-# #%% Print Pymol commands to color heavy atoms by relative tetrahedrality
-
-# # Scale rel_tetrahedrality values (ranging from 0.93 to 1.14) to a color value between 0.10 to 0.99
-# # I'm setting the bluest blue to 1.10 rel_tetrahedrality and the reddest red to 0.90 rel_tetrahedrality
-
-# low_val  = 0.90
-# high_val = 1.10
-# color_val = ( rel_tetrahedrality - low_val ) / (high_val - low_val)
-
-# pymol_object = 'clust5_cutoff30' #name of object in Pymol
-# sc_resids = np.concatenate((np.arange(1,8),np.arange(11,20))) # sidechains; ignoring glycines (resid 8,9,10)
-# bb_resids = np.arange(1,19+1) #backbone
-
-# # alter the β property to be the relative tetrahedrality around each residue's sidechain
-# for i,resid in enumerate(sc_resids):
-#     print(f'alter resid {resid} and sidechain and not hydrogen, b={rel_tetrahedrality[i]:.3f}')
-
-# # alter the β property to be the relative tetrahedrality around each residue's backbone 
-# for i, resid in enumerate(bb_resids):
-#     print(f'alter resid {resid} and not sidechain and not hydrogen, b={rel_tetrahedrality[i+sidechain_counter]:.3f}')
-    
-#     # adding some if states to fix a Pymol bug (it counts the termini to be sidechains for some reason)
-#     if resid==1:
-#         print(f'alter resid {resid} and name N, b={rel_tetrahedrality[i+sidechain_counter]:.3f}')
-#     if resid==19:
-#         print(f'alter resid {resid} and (name OC1 or name OC2), b={rel_tetrahedrality[i+sidechain_counter]:.3f}')
-
-# # color the residues on a red_white_blue spectrum
-# print(f'spectrum b, red_white_blue, {pymol_object}, minimum={low_val}, maximum={high_val}')
-
-
-# #%% Output csv of all the relative tetrahedrality bars
-# # columns: hp1/hp2, noSalt/NaCl, cluster#, amino acid name, backbone/sidechain, rel tetrahedrality
-# molecule = ['hp1'] * len(rel_tetrahedrality)
-# salt_condition = ['noSalt'] * len(rel_tetrahedrality)
-# cluster = [1] * len(rel_tetrahedrality)
-# residues[6] = 'aa301'
-# residues = list(np.delete(residues,[7,8,9])) + residues
-# atomsType = ['sc']*sidechain_counter + ['bb']*(len(rel_tetrahedrality)-sidechain_counter)
-# rel_tetrahedrality = np.around(rel_tetrahedrality,4)
-
-# df = pd.DataFrame(list(zip(molecule,salt_condition,cluster,residues,atomsType,rel_tetrahedrality)),
-#                columns =['molecule','salt condition','cluster#','amino acid',
-#                          'backbone/sidechain','relative tetrahedrality'])
-
-# df.to_csv('hp1_noSalt_cluster1.csv',index=False)
-# %%
