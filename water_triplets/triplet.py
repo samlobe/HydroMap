@@ -52,9 +52,9 @@ else:
     print("Error: Please either provide the -res and -ch flags or the --groupFile and --groupNum flags.")
     sys.exit(1)
 
-protein_name = protein_processed.split('_')[0]
 if not protein_processed.endswith('.gro'):
     protein_processed += '.gro'
+protein_name = protein_processed[:-14] # excluding the '_processed.gro' part
 structure_path = os.path.join('..', protein_processed)  # Looking at structure file in parent directory
 traj_path = os.path.join('..','traj.dcd') # Looking at trajectory in parent directory
 

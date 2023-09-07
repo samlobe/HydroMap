@@ -2,6 +2,7 @@ from openmm.app import *
 from openmm import *
 from openmm.unit import *
 import sys
+import os
 
 # Read structure file using sys.argv
 if len(sys.argv) < 2:
@@ -43,32 +44,69 @@ integrator = LangevinMiddleIntegrator(temperature, friction, dt)
 # Setup Platform for GPU
 platform = Platform.getPlatformByName('CUDA')
 
+# Set reporter frequency
+report_frequency_ps = 1  # Every 1 ps
+steps_per_report = int(report_frequency_ps / (dt/picoseconds))
+steps_per_checkpoint = int(steps_per_report)*100
+
+# Set total simulation time in ns and calculate the number of steps
+total_simulation_time = 6  # ns
+steps = int(total_simulation_time * 1e3 / (dt/picoseconds))  # Convert total time to ps and divide by timestep
+
 # Setup the Simulation
 simulation = Simulation(top.topology, system, integrator, platform)
 simulation.context.setPositions(gro.positions)
 
-# Energy Minimization
-print('Performing energy minimization...')
-simulation.minimizeEnergy()
+# Load from the checkpoint if it exists
+checkpoint_file = 'checkpoint.chk'
+if os.path.exists(checkpoint_file):
+    print("Found checkpoint file. Resuming simulation from the checkpoint.")
+    # Load from the checkpoint
+    with open(checkpoint_file, 'rb') as f:
+        simulation.context.loadCheckpoint(f.read())
+    # Adjust the number of steps to simulate based on the total desired steps and the current step count
+    steps_remaining = steps - simulation.currentStep
+    if steps_remaining < 0:
+        steps_remaining = 0
 
-# 3. Set reporter frequency
-report_frequency_ps = 10  # Every 10 ps
-steps_per_report = int(report_frequency_ps / (dt/picoseconds))
+    # Add the reporters
+    simulation.reporters.append(DCDReporter('traj.dcd', steps_per_report,append=True))
+    simulation.reporters.append(StateDataReporter('energies.log', steps_per_report, step=True,time=True,
+                                                  potentialEnergy=True, kineticEnergy=True,totalEnergy=True,
+                                                  temperature=True, volume=True, separator='\t',append=True))
+    simulation.reporters.append(CheckpointReporter('checkpoint.chk', steps_per_checkpoint))
+    # NOTE: the energies.log and traj.dcd files are 99% likely to have duplicates.
+    # We can remove these duplicates with `python remove_checkpointed_duplicates.py`
+    remove_duplicates = True
+    
+    # Continue the simulation
+    simulation.step(steps_remaining)
 
-# Set total simulation time in ns and calculate the number of steps
-total_simulation_time = 0.5  # ns
-steps = int(total_simulation_time * 1e3 / (dt/picoseconds))  # Convert total time to ps and divide by timestep
+else:
+    # If checkpoint doesn't exist, perform energy minimization
+    print('Performing energy minimization...')
+    simulation.minimizeEnergy()
+    print(f'Simulating for {total_simulation_time} ns...')
 
-# Production Run
-print(f'Simulating for {total_simulation_time} ns...')
-simulation.context.setVelocitiesToTemperature(temperature)
-simulation.reporters.append(DCDReporter('traj.dcd', steps_per_report))
-simulation.reporters.append(StateDataReporter('energies.log', steps_per_report, step=True, time=True, potentialEnergy=True, kineticEnergy=True, totalEnergy=True, temperature=True, volume=True, separator='\t'))
-simulation.reporters.append(CheckpointReporter('checkpoint.chk', 5*steps_per_report))  # checkpoint is 5x less frequent
+    # Set up reporters to report coordinates, energies, and checkpoints
+    simulation.reporters.append(DCDReporter('traj.dcd', steps_per_report))
+    simulation.reporters.append(StateDataReporter('energies.log', steps_per_report, step=True, time=True, 
+                                                potentialEnergy=True, kineticEnergy=True, totalEnergy=True, 
+                                                temperature=True, volume=True, separator='\t'))
+    simulation.reporters.append(CheckpointReporter('checkpoint.chk', steps_per_checkpoint))
+    simulation.context.setVelocitiesToTemperature(temperature)
+    remove_duplicates = False # no need to clean up any repeated frames from checkpointing
 
-simulation.step(steps)
+    # Production Run
+    simulation.step(steps)
 
 # Save the final state
 simulation.saveState("endState")
 
 print('Done! Saved trajectory (traj.dcd), state data (energies.log), and checkpoint files if you want to keep simulating later (checkpoint.chk, endState).')
+
+# clean up the duplicate frames from the trajectory and energies log if a checkpoint was used
+if remove_duplicates:
+    print('\nRemoving duplicate frames in traj.dcd and duplicate entries in energies.log...')
+    import subprocess
+    subprocess.run(["python", "remove_checkpointed_duplicates.py",gro_file_name])

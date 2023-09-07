@@ -31,7 +31,7 @@ srun --gres=gpu:1 python simulate_with_openmm.py {protein_name}
 def main():
     parser = argparse.ArgumentParser(description='Create and submit a SLURM job for protein simulation.')
     parser.add_argument('-p','--protein_name', required=True, help='Name of the protein for the simulation job.')
-    parser.add_argument('-t','--time_limit', type=int, default=40, help='Time limit for the SLURM job in minutes. Default is 40 min.')
+    parser.add_argument('-t','--time_limit', type=int, default=60, help='Time limit for the SLURM job in minutes. Default is 60 min.')
     
     args = parser.parse_args()
 

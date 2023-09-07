@@ -2,10 +2,41 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import MDAnalysis as mda
+import argparse
 import os
-from pltinteractivelegend import InteractiveLegend as ileg
+import sys
+from collections import OrderedDict
 from tqdm import tqdm
 
+# Setting up argparse
+parser = argparse.ArgumentParser(description='Process the triplet angles of your protein.')
+# Add arguments
+parser.add_argument('-p', '--protein', required=True, help="protein file ( e.g. <protein>[.pdb] )")
+parser.add_argument('--multiChain', action='store_true', help="protein has multiple chains")
+parser.add_argument('--groupsFile', help='File containing MDAnalysis selection strings, one per line.')
+
+# Read arguments
+if __name__ == '__main__': # for debugging
+    test_args = ['-p', 'example_protein.pdb']
+    args = parser.parse_args(test_args)
+else: # for normal use
+    args = parser.parse_args()
+
+# Make sure user uses (1) --multiChain or (2) --groupsFile or (3) neither
+if args.multiChain and args.groupsFile:
+    raise ValueError("You can't use both --multiChain and --groupsFile. Please choose one.")
+
+# Assign arguments
+protein_name = args.protein
+if not protein_name.endswith('.pdb'):
+    protein_name += '.pdb'
+pdb_path = os.path.join('..', protein_name)  # Uses the protein name from command line argument
+
+# read in the protein file
+u = mda.Universe(pdb_path)
+
+# initalize histogramming of the water triplet distribution
 bin_width = 5 # degrees
 min = 40
 max = 180
@@ -16,6 +47,7 @@ def histo_line(data):
     bin_middle = bin_middle + bin_edges[:len(bin_middle)]
     return bin_middle, histo_height
 
+# function to read the angles from the .txt files created by triplets.py
 def read_angles(filepath):
     with open(filepath,'r') as f:
         angles = []
@@ -30,110 +62,105 @@ def read_angles(filepath):
     all_angles = np.array([item for sublist in angles for item in sublist])
     avg_measures = len(all_angles) / len(angles) # avg number of angle measurements per frame
     return all_angles, avg_measures 
+#%%
+# Mapping of 3-letter code to 1-letter code for amino acids
+aa_mapping = {
+    'ALA': 'A', 'CYS': 'C', 'ASP': 'D', 'GLU': 'E',
+    'PHE': 'F', 'GLY': 'G', 'HIS': 'H', 'ILE': 'I',
+    'LYS': 'K', 'LEU': 'L', 'MET': 'M', 'ASN': 'N',
+    'PRO': 'P', 'GLN': 'Q', 'ARG': 'R', 'SER': 'S',
+    'THR': 'T', 'VAL': 'V', 'TRP': 'W', 'TYR': 'Y',
+    'HID': 'H', 'HIE': 'H', 'HIP': 'H', 'ACE': 'X',
+    'NME': 'X', 'UNK': 'X'
+}
 
-# get hydrophobin sequence
-with open('sequence.txt', 'r') as file:
-    seq = file.read().replace('\n', '')
+def read_pdb_get_sequence(pdb_file):
+    sequence = []
+    with open(pdb_file, 'r') as f:
+        lines = f.readlines()
+        residues = OrderedDict()
+        for line in lines:
+            if line.startswith("ATOM"):
+                res_num = int(line[22:26].strip())
+                res_name = line[17:20].strip()
+                residues[res_num] = aa_mapping[res_name]
+        sequence = list(residues.values())
+    return ''.join(sequence)
 
-script_dir = os.path.dirname(__file__) # absolute dir the script is in
+# Read sequence from PDB
+sequence = read_pdb_get_sequence(pdb_path)
 
+# Write sequence to FASTA
+with open(f'{protein_name[:-4]}.fasta', 'w') as out:
+    out.write(f'>{protein_name[:-4]}\n')
+    out.write(sequence + '\n')
 
 #%% get residue data
-residue_distros = []
-residue_names = []
-avg_residue_angles_list = []
-residue_counter = 0
-print('Processing residue data...')
-for resid in tqdm(np.arange(333,526+1)):
-    residue_file = f'{script_dir}/angles/cv_res{resid}_angles.txt'
-    if not os.path.exists(residue_file):
-        continue
+script_dir = os.path.dirname(__file__) # absolute dir the script is in
+group_distros = []
+group_names = []
+avg_num_angles_list = []
+group_counter = 0
+
+if args.groupsFile: # reading the custom groups in the groups file if given
+    print("Processing your custom groups' data...")
+    with open(args.groupsFile, 'r') as f:
+        groups_selection = [line for line in f if not line.strip().startswith('#')]
+    total_groups = len(groups_selection)
+    for group_num in tqdm(np.arange(1,total_groups+1)):
+        group_file = f'{script_dir}/angles/{protein_name[:-4]}_group{group_num}_angles.txt'
+        if not os.path.exists(group_file):
+            print(f'Group {group_num} data is missing.')
+            continue
     
-    residue_names.append(f'{seq[resid-333]}{resid}')
-    residue_angles,avg_residue_angles = read_angles(residue_file)
-    bin_mids, histo = histo_line(residue_angles)
-    residue_distros.append(histo)
-    avg_residue_angles_list.append(avg_residue_angles)
-    residue_counter += 1
+        group_names.append(f'group{group_num}')
+        group_angles,avg_num_angles = read_angles(group_file)
+        bin_mids, histo = histo_line(group_angles)
+        group_distros.append(histo)
+        avg_num_angles_list.append(avg_num_angles)
+        group_counter += 1
+# if no custom groups file, then use the resids (and segids)
+else:
+    print("Processing each residue's data ...")
+    resids = u.residues.resids
+    segids = u.residues.segids # used when there are multiple chains
+    total_groups = len(resids)
+    groups_selection = [] # for MDAnalysis selection strings
+    for i, (resid, segid) in enumerate(tqdm(zip(resids, segids))):
+        if args.multiChain:
+            group_file = f'{script_dir}/angles/{protein_name[:-4]}_res{resid}_chain{segid}_angles.txt'
+            if not os.path.exists(group_file):
+                print(f'Data missing for: residue {resid} chain {segid}')
+                continue
+            seq_id = resid - u.residues.resids[0]
+            group_names.append(f'{sequence[seq_id]}{resid}_chain{segid}')
+            groups_selection.append(f'resid {resid} and segid {segid}') # not excluding hydrogens
+        else:
+            group_file = f'{script_dir}/angles/{protein_name[:-4]}_res{resid}_angles.txt'
+            if not os.path.exists(group_file):
+                print(f'Data missing for: residue {resid}')
+                continue
+            seq_id = resid - u.residues.resids[0]
+            group_names.append(f'{sequence[seq_id]}{resid}')
+            groups_selection.append(f'resid {resid}') # not excluding hydrogens
+
+        group_angles,avg_num_angles = read_angles(group_file)
+        bin_mids, histo = histo_line(group_angles)
+        group_distros.append(histo)
+        avg_num_angles_list.append(avg_num_angles)
+        group_counter += 1
+
+# TOMORROW TASKS:
+# add mdanalysis selection strings to the df
 
 # turn into DataFrame
-avg_residue_angles_list = np.array(avg_residue_angles_list).reshape(-1, 1)
-residue_data = np.hstack((np.array(residue_distros), avg_residue_angles_list))
-residue_df = pd.DataFrame(data=residue_data, index=residue_names, columns=np.append(bin_mids, 'avg_residue_angles'))
-residue_df.to_csv('residue_data.csv')
+avg_num_angles_list = np.array(avg_num_angles_list).reshape(-1, 1)
+groups_selection = np.array(groups_selection).reshape(-1, 1)
+groups_data = np.hstack((np.array(group_distros), avg_num_angles_list, groups_selection))
+groups_df = pd.DataFrame(data=groups_data, index=group_names, columns=np.append(bin_mids, 'avg_residue_angles', 'MDAnalysis_selection_strings'))
+if args.groupsFile:
+    groups_df.to_csv(f'{protein_name}_hydrationGroups_data.csv')
+else:
+    groups_df.to_csv(f'{protein_name}_residues_data.csv')
 
-
-#%% for full residue
-for i,distro in enumerate(residue_distros):
-    if avg_residue_angles_list[i] > 1:
-        plt.plot(bin_mids,distro,label=residue_names[i])
-# plt.plot(bins,bulk_distro,label='bulk',lw=6,color='black')
-plt.ylim(bottom=0,top=0.02)
-plt.xlim(left=40,right=180)
-plt.title('SARS2: Full Residues',fontsize=20)
-plt.xlabel(r'Water Triplet Angle ($\theta$)',fontsize=15)
-plt.ylabel(r'$P(\theta)$',fontsize=15)
-plt.ylim(bottom=0)
-plt.legend(fontsize=7,ncol=4)
-leg = ileg()
-plt.show()
-
-# #%% PLOT DIFFERENCE BETWEEN EACH DISTRIBUTION AND THE BULK DISTRIBUTION
-# distros = np.array(distros)
-# d_distros = distros - np.array(bulk_distro)
-
-# fig2, ax2 = plt.subplots(figsize=(8,7))
-# for i,distro in enumerate(d_distros):
-#     plt.plot(bins,distro,label=distro_names[i])
-
-
-# # for i,distro in enumerate(d_distros):
-# #     xnew = np.linspace(40, 180, 80) 
-# #     spl = make_interp_spline(bins, distro, k=3)  # type: BSpline
-# #     distro_smooth = spl(xnew)
-# #     plt.plot(xnew,distro_smooth,label=distro_names[i])
-    
-# plt.hlines(y = 0, xmin = 40, xmax = 180,color='black')
-# plt.xlim(left=40,right=180)
-# plt.xlabel(r'3-Body Angle ($\theta$)',fontsize=15)
-# plt.ylabel(r'$P(\theta) - P_{bulk}(\theta)$',fontsize=15)
-# plt.legend(fontsize=8,ncol=2)
-# leg = ileg()
-
-# #%% INTEGRATE FROM 90-120 DEGREES TO FIND % OF TETRAHEDRAL WATER
-# tetrah = []
-# starti = np.argmin(np.abs(bins-100))
-# endi   = np.argmin(np.abs(bins-120))
-
-# # waters around each residue
-# tetrahedral_ys = distros[:,starti:endi]
-# frac_tetrahedral = np.sum(tetrahedral_ys,axis=1) * (bins[1]-bins[0]) # rectangular integration
-# frac_tetrahedral = np.around(frac_tetrahedral,3)
-
-# # bulk waters
-# b_tetrahedral_ys = bulk_distro[starti:endi]
-# b_frac_tetrahedral = np.sum(b_tetrahedral_ys) * (bins[1]-bins[0]) # rectangular integration
-# b_frac_tetrahedral = np.around(b_frac_tetrahedral,3)
-
-# rel_tetrahedrality = frac_tetrahedral / b_frac_tetrahedral
-
-
-# #%% Plot relative tetrahedrality of sidechains compared to bulk water by residue
-# plt.figure(figsize=(14,6))
-# residues = [f'{seq[i]}{resid}' for i,resid in enumerate(np.arange(295,313+1))]
-# # residues = np.delete(residues,[7,8,9])
-# plt.bar(np.delete(residues,[7,8,9]),rel_tetrahedrality[:sidechain_counter])
-# plt.ylim(bottom=0.8,top=1.2)
-# plt.ylabel('Relative tetrahedrality',fontsize=15)
-# plt.xticks(fontsize=12)
-# plt.title('Relative tetrahedrality of water around SIDECHAIN heavy atoms',fontsize=20)
-
-# #%% Plot relative tetrahedrality of backbone compared to bulk water by residue
-# plt.figure(figsize=(14,6))
-# plt.bar(residues,rel_tetrahedrality[sidechain_counter:])
-# plt.ylim(bottom=0.8,top=1.2)
-# plt.ylabel('Relative tetrahedrality',fontsize=15)
-# plt.title('Relative tetrahedrality of water around BACKBONE heavy atoms',fontsize=20)
-# plt.xticks(fontsize=12)
-# plt.show()
-
+#%%

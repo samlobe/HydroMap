@@ -68,7 +68,7 @@ run_gmx_command "echo 13 | gmx genion -s ions.tpr -o ${protein}_processed.gro -p
     "Now we add in the ions... Selecting SOL to replace the SOL (i.e. water) atoms with ions."
 
 echo "Cleaning up files..."
-rm ${protein}_newbox.gro ${protein}_solv.gro posre.itp mdout.mdp ions.tpr 
+rm ${protein}_newbox.gro ${protein}_solv.gro posre*.itp mdout.mdp ions.tpr 
 find . -maxdepth 1 -type f -name "#*" -exec rm -f {} \;
 
 echo -e "\nDone processing with GROMACS. Use ${protein}_processed.gro and topol.top for the simulation.\n"

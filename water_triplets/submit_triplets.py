@@ -6,7 +6,7 @@ import argparse
 import numpy as np
 
 # Setting up arguments parser
-parser = argparse.ArgumentParser(description='Process some inputs to determine the analysis groups in your protein.')
+parser = argparse.ArgumentParser(description='Set groups in your protein to analyze their triplets.\nSubmit analysis jobs in batches.\nSelects all residues (assuming 1 chain) by default.')
 # adding arguments
 parser.add_argument('-p', '--protein', required=True, help="protein file (e.g. <protein>[.pdb])\nThe unprocessed protein file is necessary.")
 parser.add_argument('--multiChain', action='store_true', help="protein has multiple chains")
@@ -37,7 +37,7 @@ if args.groupsFile: # reading the custom groups in the groups file if given
     total_groups = len(groups)
 else: # if no groups file, then use the resids (and segids)
     resids = u.residues.resids
-    segids = u.residues.segids
+    segids = u.residues.segids # used when there are multiple chains
     total_groups = len(resids)
 
 jobs_per_script = 40 # how many processors are on the computing node you're using (e.g. 40 for UCSB's Pod cluster)
