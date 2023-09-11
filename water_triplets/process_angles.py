@@ -12,16 +12,12 @@ from tqdm import tqdm
 # Setting up argparse
 parser = argparse.ArgumentParser(description='Process the triplet angles of your protein.')
 # Add arguments
-parser.add_argument('-p', '--protein', required=True, help="protein file ( e.g. <protein>[.pdb] )")
+parser.add_argument('protein', help="protein file ( e.g. <protein>[.pdb] )")
 parser.add_argument('--multiChain', action='store_true', help="protein has multiple chains")
 parser.add_argument('--groupsFile', help='File containing MDAnalysis selection strings, one per line.')
 
 # Read arguments
-if __name__ == '__main__': # for debugging
-    test_args = ['-p', 'example_protein.pdb']
-    args = parser.parse_args(test_args)
-else: # for normal use
-    args = parser.parse_args()
+args = parser.parse_args()
 
 # Make sure user uses (1) --multiChain or (2) --groupsFile or (3) neither
 if args.multiChain and args.groupsFile:
@@ -158,9 +154,6 @@ avg_num_angles_list = np.array(avg_num_angles_list).reshape(-1, 1)
 groups_selection = np.array(groups_selection).reshape(-1, 1)
 groups_data = np.hstack((np.array(group_distros), avg_num_angles_list, groups_selection))
 groups_df = pd.DataFrame(data=groups_data, index=group_names, columns=np.append(bin_mids, 'avg_residue_angles', 'MDAnalysis_selection_strings'))
-if args.groupsFile:
-    groups_df.to_csv(f'{protein_name}_hydrationGroups_data.csv')
-else:
-    groups_df.to_csv(f'{protein_name}_residues_data.csv')
+groups_df.to_csv(f'{protein_name}_triplet_data.csv')
 
 #%%

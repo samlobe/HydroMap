@@ -6,28 +6,25 @@ from tqdm import tqdm
 import sys
 import os
 import argparse
+import shutil
 
 # Setting up argparse
 parser = argparse.ArgumentParser(description='Process some protein-related inputs.')
 
 # Add arguments
-parser.add_argument('-f', '--file', required=True, help="protein_processed file (e.g. <protein>_processed[.gro])")
-parser.add_argument('-res', '--resid', type=int, required=True, help='resid argument')
+parser.add_argument('protein',type=str,help="Processed protein structure file (e.g. myProtein_processed[.gro])")
+parser.add_argument('trajectory',default='../traj.dcd',type='str',help='Trajectory file name. Default = ../traj.dcd')
+parser.add_argument('-res', '--resid', type=int, help='resid argument')
 parser.add_argument('-ch', '--chain', help='segid (i.e. chainID) argument')
 parser.add_argument('-t', '--time', type=float, default=5.0, help='Last x ns. Default is 5 ns.')
 parser.add_argument('--groupsFile', help='File containing MDAnalysis selection strings, one per line.')
 parser.add_argument('--groupNum', type=int, help='Line number in groupFile to use as the selection string.')
 parser.add_argument('--hydrationCutoff', type=float, default=4.25, help='Cutoff distance (in Å) to define the hydration waters. Default is 4.25 Å.)')
 
-# Read arguments
-if __name__ == '__main__': # for debugging
-    test_args = ['-f', 'HSPDZ3_processed.gro', '-res', '69']
-    args = parser.parse_args(test_args)
-else: # for normal use
-    args = parser.parse_args()
+args = parser.parse_args()
 
 # Assign the arguments
-protein_processed = args.file
+protein_processed = args.protein
 resid = args.resid
 segid = args.chain
 last_x_ns = args.time
@@ -41,7 +38,7 @@ if args.groupsFile and args.groupNum:
             group_strings = f.readlines()
         my_residue = group_strings[args.groupNum - 1].strip()  # 1-based index for user-friendliness
     except (IndexError, FileNotFoundError, IOError) as e:
-        print(f"Error loading group string from file: {e}")
+        print(f"Error loading custom groups' selection strings from file: {e}")
         sys.exit(1)
 elif args.resid:
     if args.chain:  # If a chain was provided
@@ -49,14 +46,14 @@ elif args.resid:
     else:  # No chain provided
         my_residue = f'resid {resid} and not name H*'  # selecting heavy atoms without chain
 else:
-    print("Error: Please either provide the -res and -ch flags or the --groupFile and --groupNum flags.")
+    print("Error: Please either provide the -res (and -ch flags) or the --groupFile and --groupNum flags.")
     sys.exit(1)
 
 if not protein_processed.endswith('.gro'):
     protein_processed += '.gro'
 protein_name = protein_processed[:-14] # excluding the '_processed.gro' part
 structure_path = os.path.join('..', protein_processed)  # Looking at structure file in parent directory
-traj_path = os.path.join('..','traj.dcd') # Looking at trajectory in parent directory
+traj_path = args.trajectory
 
 ### LOAD THE MD TRAJECTORY
 u = mda.Universe(structure_path,traj_path)
@@ -100,8 +97,11 @@ angles_list = [[] for i in range(len(u.trajectory))]
 # Create a checkpoint file to save progress (every 1000 frames)
 if args.groupsFile and args.groupNum:
     checkpoint_filename = f'checkpoint{protein_name}_group{args.groupNum}_angles.txt'
-else:
+elif args.chain:
     checkpoint_filename = f'checkpoint_{protein_name}_res{resid}_chain{segid}_angles.txt'
+else:
+    checkpoint_filename = f'checkpoint_{protein_name}_res{resid}_angles.txt'
+
 
 # Load from checkpoint if exists
 start_frame = 0
@@ -152,5 +152,12 @@ with open(output_filename,'w') as txtfile:
 # Delete checkpoint file
 if os.path.exists(checkpoint_filename):
     os.remove(checkpoint_filename)
+
+# create directory 'angles' if it doesn't exist
+if not os.path.exists('angles'):
+    os.makedirs('angles')
+
+# move output file to angles
+shutil.move(output_filename,f'angles/{output_filename}')
 
 # %%

@@ -3,18 +3,22 @@ from openmm import *
 from openmm.unit import *
 import sys
 import os
+import argparse
 
-# Read structure file using sys.argv
-if len(sys.argv) < 2:
-    print("Usage: simulate_with_openmm.py <structure_file[.gro]>")
-    sys.exit(1)
+parser = argparse.ArgumentParser(description='Run a NPT simulation from a processed protein file.')
+parser.add_argument('protein', help='Name of the processed protein structure file (.gro) for the simulation job, e.g. myProtein_processed[.gro]')
+parser.add_argument('-ns','--nanoseconds',type=float,help='Time in ns you wish to simulate.')
+parser.add_argument('-r','--restrain',action='store_true',help='Restrain heavy atoms of protein.')
+parser.add_argument('-o','--output',default='traj.dcd',type='str',help='Output trajectory file name (.dcd)')
+args = parser.parse_args()
 
-gro_file_name = sys.argv[1]
-if not gro_file_name.endswith(".gro"):
-    gro_file_name += ".gro"
+# Read the processed protein structure file (i.e. solvated and neutralized)
+protein_file = args.protein
+if not protein_file.endswith(".gro"):
+    protein_file += ".gro"
 
 # Load Gromacs Files
-gro = GromacsGroFile(gro_file_name)
+gro = GromacsGroFile(protein_file)
 top = GromacsTopFile('topol.top', periodicBoxVectors=gro.getPeriodicBoxVectors())
 
 # Store box size and pressure
@@ -50,12 +54,31 @@ steps_per_report = int(report_frequency_ps / (dt/picoseconds))
 steps_per_checkpoint = int(steps_per_report)*100
 
 # Set total simulation time in ns and calculate the number of steps
-total_simulation_time = 6  # ns
+total_simulation_time = args.nanoseconds  # ns
 steps = int(total_simulation_time * 1e3 / (dt/picoseconds))  # Convert total time to ps and divide by timestep
 
 # Setup the Simulation
 simulation = Simulation(top.topology, system, integrator, platform)
 simulation.context.setPositions(gro.positions)
+traj_name = args.output
+
+# Add restraints to heavy atoms in the protein if -r flag is set
+# HAVENT TESTED THIS YET
+if args.restrain:
+    # Define a force for restraining atoms
+    force = CustomExternalForce("0.5*k*periodicdistance(x, y, z, x0, y0, z0)^2")
+    force.addGlobalParameter("k", 1000.0 * kilojoules_per_mole/nanometers**2)  # force constant
+    force.addPerParticleParameter("x0")  # x coordinate of the restrained atom
+    force.addPerParticleParameter("y0")  # y coordinate of the restrained atom
+    force.addPerParticleParameter("z0")  # z coordinate of the restrained atom
+
+    # Loop through all atoms in the protein, if it's not a hydrogen atom, add it to the force for restraining
+    for atom in top.topology.atoms():
+        if atom.element.symbol != 'H':
+            force.addParticle(atom.index, gro.positions[atom.index].value_in_unit(nanometers))
+
+    # Add the restraining force to the system
+    system.addForce(force)
 
 # Load from the checkpoint if it exists
 checkpoint_file = 'checkpoint.chk'
@@ -70,7 +93,7 @@ if os.path.exists(checkpoint_file):
         steps_remaining = 0
 
     # Add the reporters
-    simulation.reporters.append(DCDReporter('traj.dcd', steps_per_report,append=True))
+    simulation.reporters.append(DCDReporter(traj_name, steps_per_report,append=True))
     simulation.reporters.append(StateDataReporter('energies.log', steps_per_report, step=True,time=True,
                                                   potentialEnergy=True, kineticEnergy=True,totalEnergy=True,
                                                   temperature=True, volume=True, separator='\t',append=True))
@@ -89,7 +112,7 @@ else:
     print(f'Simulating for {total_simulation_time} ns...')
 
     # Set up reporters to report coordinates, energies, and checkpoints
-    simulation.reporters.append(DCDReporter('traj.dcd', steps_per_report))
+    simulation.reporters.append(DCDReporter(traj_name, steps_per_report))
     simulation.reporters.append(StateDataReporter('energies.log', steps_per_report, step=True, time=True, 
                                                 potentialEnergy=True, kineticEnergy=True, totalEnergy=True, 
                                                 temperature=True, volume=True, separator='\t'))
@@ -103,10 +126,10 @@ else:
 # Save the final state
 simulation.saveState("endState")
 
-print('Done! Saved trajectory (traj.dcd), state data (energies.log), and checkpoint files if you want to keep simulating later (checkpoint.chk, endState).')
+print(f'Done! Saved trajectory ({args.output}), state data (energies.log), and checkpoint files if you want to keep simulating later (checkpoint.chk, endState).')
 
 # clean up the duplicate frames from the trajectory and energies log if a checkpoint was used
 if remove_duplicates:
-    print('\nRemoving duplicate frames in traj.dcd and duplicate entries in energies.log...')
+    print(f'\nRemoving duplicate frames in {args.output} and duplicate entries in energies.log...')
     import subprocess
-    subprocess.run(["python", "remove_checkpointed_duplicates.py",gro_file_name])
+    subprocess.run(["python", "remove_checkpointed_duplicates.py",protein_file])
