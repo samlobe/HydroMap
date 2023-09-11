@@ -7,7 +7,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Run a NPT simulation from a processed protein file.')
 parser.add_argument('protein', help='Name of the processed protein structure file (.gro) for the simulation job, e.g. myProtein_processed[.gro]')
-parser.add_argument('-ns','--nanoseconds',type=float,help='Time in ns you wish to simulate.')
+parser.add_argument('-ns','--nanoseconds',default=5,type=float,help='Time in ns you wish to simulate.')
 parser.add_argument('-r','--restrain',action='store_true',help='Restrain heavy atoms of protein.')
 parser.add_argument('-o','--output',default='traj.dcd',type='str',help='Output trajectory file name (.dcd)')
 args = parser.parse_args()
@@ -53,7 +53,11 @@ report_frequency_ps = 1  # Every 1 ps
 steps_per_report = int(report_frequency_ps / (dt/picoseconds))
 steps_per_checkpoint = int(steps_per_report)*100
 
-# Set total simulation time in ns and calculate the number of steps
+# Equilibration phase (before production run)
+equilibration_time_ps = 100  # 100 ps equilibration time
+equilibration_steps = int(equilibration_time_ps / (dt/picoseconds))
+
+# Set total production simulation time in ns and calculate the number of steps
 total_simulation_time = args.nanoseconds  # ns
 steps = int(total_simulation_time * 1e3 / (dt/picoseconds))  # Convert total time to ps and divide by timestep
 
@@ -110,6 +114,8 @@ else:
     print('Performing energy minimization...')
     simulation.minimizeEnergy()
     print(f'Simulating for {total_simulation_time} ns...')
+    # Equilibrate briefly before saving properties
+    simulation.step(equilibration_steps)
 
     # Set up reporters to report coordinates, energies, and checkpoints
     simulation.reporters.append(DCDReporter(traj_name, steps_per_report))
