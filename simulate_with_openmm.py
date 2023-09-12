@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(description='Run a NPT simulation from a proces
 parser.add_argument('protein', help='Name of the processed protein structure file (.gro) for the simulation job, e.g. myProtein_processed[.gro]')
 parser.add_argument('-ns','--nanoseconds',default=5,type=float,help='Time in ns you wish to simulate.')
 parser.add_argument('-r','--restrain',action='store_true',help='Restrain heavy atoms of protein.')
-parser.add_argument('-o','--output',default='traj.dcd',type='str',help='Output trajectory file name (.dcd)')
+parser.add_argument('-o','--output',default='traj.dcd',type=str,help='Output trajectory file name (.dcd)')
 args = parser.parse_args()
 
 # Read the processed protein structure file (i.e. solvated and neutralized)
