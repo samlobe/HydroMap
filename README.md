@@ -8,9 +8,9 @@ Output = pdb file with dewetting free energies of each residue listed in the bet
 ## Procedure summary:
 
 1. **Use GROMACS to build your system**: protein + water + ions
-2. **Use OpenMM to simulate your system for 10ns**.
-3. **Measure water angles around each residue**.
-4. **Predict dewetting free energy from water angles and output new pdb**.
-5. **Color pdb by dewetting free energy**.
+2. **Use OpenMM to run a short simulation**.
+3. **Measure water angles around each residue/group**.
+4. **Process water angles, and output pdbs with stored dewetting free energy predictions and principal component contributions**.
+5. **Color pdb by dewetting free energy and principal component contributions.**.
 
 ## [Click here for the complete tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) which includes detailed install instructions, the commands necessary for each step in the procedure, and some background info.
