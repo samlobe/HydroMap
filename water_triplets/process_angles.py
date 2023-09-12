@@ -12,7 +12,7 @@ from tqdm import tqdm
 # Setting up argparse
 parser = argparse.ArgumentParser(description='Process the triplet angles of your protein.')
 # Add arguments
-parser.add_argument('protein', help="protein file ( e.g. <protein>[.pdb] )")
+parser.add_argument('protein', help="unprocessed protein file ( e.g. <protein>[.pdb] )")
 parser.add_argument('--multiChain', action='store_true', help="protein has multiple chains")
 parser.add_argument('--groupsFile', help='File containing MDAnalysis selection strings, one per line.')
 

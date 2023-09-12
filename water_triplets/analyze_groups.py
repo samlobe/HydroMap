@@ -11,7 +11,7 @@ import MDAnalysis as mda
 # Setting up argparse
 parser = argparse.ArgumentParser(description='Generate predictions from the triplet distribution and color pdb.')
 # Add arguments
-parser.add_argument('protein', help="protein pdb file to color, e.g. myProtein.pdb\n(recommended to use a pdb of protein without solvent or ions, and with hydrogens present)")
+parser.add_argument('protein', help="unprocessed protein pdb file to color, e.g. myProtein.pdb\n(recommended to use a pdb of protein without solvent or ions, and with hydrogens present)")
 
 args = parser.parse_args()
 
@@ -112,7 +112,7 @@ plt.show()
 # Then Go to `Tools -> Depiction -> Color Key` to add a key if you want. Label the values.
 # Make a label with `2dlab text "Predicted Dewetting Free Energy"`. You can drag by selecting "Move Label" in the Right Mouse tab.
 
-# With Pymol: open the pdb with your property -f-interest set to the tempfactor (i.e. bfactor)
+# With Pymol: open the pdb with your property-of-interest set to the tempfactor (i.e. bfactor)
 # `show surface`
 # `spectrum b, red_white_blue, minimum=2.5, maximum=7`
 # where 2.5 and 7 are the min and max values of the property (pick this based on the histograms)

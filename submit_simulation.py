@@ -30,10 +30,20 @@ srun --gres=gpu:1 python simulate_with_openmm.py {protein}
 
 def main():
     parser = argparse.ArgumentParser(description='Create and submit a SLURM job for protein simulation.')
-    parser.add_argument('protein', help='Name of the processed protein for the simulation job, e.g. <protein>_processed[.gro]')
+    parser.add_argument('protein', help='Name of the processed protein for the simulation job, e.g. <protein_processed[.gro]>')
     parser.add_argument('-t','--timeLimit', type=int, default=60, help='Time limit for the SLURM job in minutes. Default is 60 min.')
     
     args = parser.parse_args()
+
+    # check if protein file exists. if not, throw error
+    if not args.protein.endswith(".gro"):
+        args.protein += ".gro"
+    try:
+        with open(args.protein, "r") as file:
+            pass
+    except FileNotFoundError:
+        print(f"Error: {args.protein} not found.")
+        exit(1)
 
     create_slurm_script(args.protein, args.timeLimit)
     
