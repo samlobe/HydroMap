@@ -13,11 +13,11 @@ parser = argparse.ArgumentParser(description='Process some protein-related input
 
 # Add arguments
 parser.add_argument('protein',type=str,help="Processed protein structure file (e.g. myProtein_processed[.gro])")
-parser.add_argument('trajectory',default='../traj.dcd',type='str',help='Trajectory file name. Default = ../traj.dcd')
+parser.add_argument('trajectory',default='../traj.dcd',type=str,help='Trajectory file name. Default = ../traj.dcd')
 parser.add_argument('-res', '--resid', type=int, help='resid argument')
 parser.add_argument('-ch', '--chain', help='segid (i.e. chainID) argument')
 parser.add_argument('-t', '--time', type=float, default=5.0, help='Last x ns. Default is 5 ns.')
-parser.add_argument('--groupsFile', help='File containing MDAnalysis selection strings, one per line.')
+parser.add_argument('--groupsFile', type=str, help='File containing MDAnalysis selection strings, one per line.')
 parser.add_argument('--groupNum', type=int, help='Line number in groupFile to use as the selection string.')
 parser.add_argument('--hydrationCutoff', type=float, default=4.25, help='Cutoff distance (in Å) to define the hydration waters. Default is 4.25 Å.)')
 
