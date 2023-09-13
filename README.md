@@ -38,7 +38,7 @@ You can skip steps 1 & 2 if you already have a simulation to analyze.
 3. [OpenMM](http://docs.openmm.org/latest/userguide/application/01_getting_started.html#installing-openmm) (Step 2) - you need to fix for TIP4P water constraints and you may need to install CUDA drivers depending on your architecture
 4. Fortran compiler (Step 3) - anaconda's f2py should work (see tutorial's FAQs)
 5. [MDAnalysis](https://www.mdanalysis.org/pages/installation_quick_start/) (Step 3 & 4)
-6. [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.html) or [Pymol](https://pymol.org/2/) (recommended for Step 5)
+6. [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.html) or [Pymol](https://pymol.org/2/) (recommended for Step 5)  
 See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more install instructions.
 
 ---
@@ -46,30 +46,31 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
 ## Main Code:  
 - **process_with_gromacs.sh**
   - Usage: `bash process_with_gromacs.sh <protein[.pdb]>`
-  - Executes some basic gromacs commands to build your system: '\<protein\>_processed.gro'
-  - Creates a topology file (topol.top), solvates your system, and adds neutralizing ions.
+  - Outputs: topology file ('topol.top') and your solvated, neutralized system ('\<protein\>_processed.gro')
+  - Uses basic GROMACS commands. Uses a99SB-disp force field with TIP4P-D water.
 - **simulate_with_openmm.py**
   - Example usage:  
-    `python simulate_with_openmm.py <protein[_processed.gro]>`  run a short NPT simulation  
+    `python simulate_with_openmm.py <protein[_processed.gro]>`   
     `python simulate_with_openmm.py myProtein_processed.gro --restrain` keep heavy atoms on protein restrained    
-    `python simulate_with_openmm.py myProtein_processed.gro --restrain -ns 2`  also run a 2 ns simulation (default is 5 ns)
-  - 
+    `python simulate_with_openmm.py myProtein_processed.gro --restrain -ns 2`  running a 2 ns simulation (default is 5 ns)
+  - Outputs: trajectory file ('traj.dcd') and log file with energies and more ('energies.log')
+  - Runs a short MD simulation with a99SB-disp force field in NPT ensemble 
 - water_triplets/**triplet.py**
   - Example usage:  
     `python triplet.py <protein[_processed.gro]> <trajectory> -res <int>` to analyze one residue  
     `python triplet.py myProtein_processed.gro traj.dcd -res 10 -ch B` to analyze the resid 10 on chain B  
     `python triplet.py myProtein_processed.gro traj.dcd --groupsFile groups_file.txt --groupNum 20` to analyze the group described by MDAnalysis selection string in the 20th line of groups_file.txt  
     `python triplet.py protein[_processed.gro traj.dcd -res 10 --hydrationCutoff 6 --time 1` to define hydration waters as being 6 Angstroms (default is 4.25A) around resid 10's heavy atoms, and to analyze just the last 1 ns (default is 5 ns) of the trajectory   
-  - 
+  - Outputs:
 - water_triplets/**process_angles.py**
   - Example usage:  
     `python process_angles.py <protein[.pdb]>`  
     `python process_angles.py myProtein.pdb --multiChain` use when your protein has multiple chains  
     `python process_angles.py myProtein.pdb --groupsFile groups_file.txt` use when you created custom groups to analyze  
-  - 
+  - Outputs:
 - water_triplets/**analyze_groups.py**
   - Usage: `python analyze_groups.py <protein[.pdb]>`
-  - 
+  - Outputs: 
 
 ## Supporting Code:
 - remove_checkpointed_duplicates.py
