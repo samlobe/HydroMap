@@ -6,7 +6,7 @@ This analysis takes <25 min of computation for a 100 residue protein, including 
 ---
 
 ### **Input:**
-- pdb file of just protein (no water or ions)
+- pdb file of just protein (no water or ions)  
 
 ### **Output:**
 - pdb file with dewetting free energy predictions of each residue (or custom group) listed in the tempfactor column
@@ -17,10 +17,10 @@ This analysis takes <25 min of computation for a 100 residue protein, including 
 
 ## Procedure summary:
 
-1. **Use GROMACS to build your system**: protein + water + ions
-2. **Use OpenMM to run a short simulation**
-3. **Measure water angles around each residue/group**
-4. **Process water angles, and output pdbs with stored dewetting free energy predictions and principal component contributions**
-5. **Color pdb by dewetting free energy and principal component contributions**
+1. Use GROMACS to ***build your system***: protein + water + ions
+2. Use OpenMM to ***run a short MD simulation***
+3. ***Measure water angles*** around each residue/group
+4. ***Process water angles***, and ***output pdbs*** with stored dewetting free energy predictions and principal component contributions
+5. **Color pdbs** by dewetting free energy and principal component contributions**
 
 [Click here for the complete tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) which includes detailed install instructions, the commands necessary for each step in the procedure, and some background info.
