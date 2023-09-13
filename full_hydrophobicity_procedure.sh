@@ -18,7 +18,7 @@ fi
 PROTEIN_NAME="$1"
 
 # Step 1: Process with GROMACS
-bash process_with_gromacs "${PROTEIN_NAME}.pdb"
+bash process_with_gromacs.sh "${PROTEIN_NAME}.pdb"
 if [ $? -ne 0 ]; then
     echo "Error processing with GROMACS. Exiting."
     exit 1
