@@ -68,8 +68,8 @@ if args.groupsFile and args.groupNum:
     except (IndexError, FileNotFoundError, IOError) as e:
         print(f"Error loading custom groups' selection strings from file: {e}")
         sys.exit(1)
-elif args.resid:
-    if args.chain:  # If a chain was provided
+elif args.resid is not None:
+    if args.chain is not None:  # If a chain was provided
         my_residue = f'resid {resid} and segid {segid} and not name H*'  # selecting heavy atoms
     else:  # No chain provided
         my_residue = f'resid {resid} and not name H*'  # selecting heavy atoms without chain
@@ -119,7 +119,7 @@ angles_list = [[] for i in range(len(u.trajectory))]
 # Create a checkpoint file to save progress (every 1000 frames)
 if args.groupsFile and args.groupNum:
     checkpoint_filename = f'checkpoint{protein_name}_group{args.groupNum}_angles.txt'
-elif args.chain:
+elif args.chain is not None:
     checkpoint_filename = f'checkpoint_{protein_name}_res{resid}_chain{segid}_angles.txt'
 else:
     checkpoint_filename = f'checkpoint_{protein_name}_res{resid}_angles.txt'
@@ -177,7 +177,10 @@ if os.path.exists(checkpoint_filename):
 
 # create directory 'angles' if it doesn't exist
 if not os.path.exists('angles'):
-    os.makedirs('angles')
+    try:
+        os.makedirs('angles')
+    except FileExistsError:
+        pass
 
 # move output file to angles
 shutil.move(output_filename,f'angles/{output_filename}')
