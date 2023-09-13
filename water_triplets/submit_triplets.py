@@ -28,15 +28,23 @@ if args.multiChain and args.groupsFile:
     raise ValueError("You can't use both --multiChain and --groupsFile. Please choose one.")
 
 # reading protein file name
-protein_name = args.protein
-if not protein_name.endswith('.pdb'):
-    protein_name += '.pdb'
-pdb_path = protein_name  # Uses the protein name from command line argument
-protein_processed = f'{protein_name[:-4]}_processed' # name of the processed protein (ignoring extension)
+protein = args.protein
+if not protein.endswith('.pdb'):
+    protein += '.pdb'
+pdb_path = protein  # Uses the protein name from command line argument
+protein_processed = f'{protein[:-4]}_processed.gro' # name of the processed protein (ignoring extension)
 
 # check if the processed protein file exists
-if not os.path.exists(f'{protein_processed}.gro'):
-    raise ValueError(f"Can't find the processed protein file: {protein_processed}.gro")
+if not os.path.exists(f'{protein_processed}'):
+    raise ValueError(f"Can't find the processed protein file: {protein_processed}")
+
+# extract protein name from the protein file name
+protein_name = protein[:-4] # excluding the '.pdb' part
+# check if the protein name has '/' in it (e.g. '../myProtein')
+# if so read the part after the last '/' (e.g. 'myProtein')
+if '/' in protein_name:
+    protein_name = protein_name.split('/')[-1]
+
 
 trajectory = args.trajectory
 # check if the trajectory file exists
@@ -61,7 +69,7 @@ else: # if no groups file, then use the resids (and segids)
 jobs_per_script = 40 # how many processors are on the computing node you're using (e.g. 40 for UCSB's Pod cluster)
 
 header = f"""#!/bin/bash
-#SBATCH -J {protein_name[:-4]}_{{batch_num}}    # Job name
+#SBATCH -J {protein_name}_{{batch_num}}    # Job name
 #SBATCH -o outLog.%j                            # Name of stdout output file
 #SBATCH -e errLog.%j                            # Name of stderr error file
 #SBATCH -p batch                                # Queue (partition) name for UCSB Pod cluster
