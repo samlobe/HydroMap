@@ -26,9 +26,9 @@ fi
 PROTEIN_NAME="$1"
 
 # Step 1: Process with GROMACS
-section "STEP 1: Building system with GROMACS"
+section "STEP 1: Build System with GROMACS"
 echo "Activating conda environment: 'hydrophobicity'"
-conda init bash # Pod uses a bash shell
+conda init bash # Pod cluster uses bash shell
 conda activate hydrophobicity
 bash process_with_gromacs.sh "${PROTEIN_NAME}.pdb"
 if [ $? -ne 0 ]; then
@@ -37,7 +37,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Step 2: Submit the simulation and capture the job ID
-section "STEP 2: Short MD Simulation"
+section "STEP 2: Run Short MD Simulation"
 OUTPUT_STRING=$(python submit_simulation.py "${PROTEIN_NAME}_processed.gro")
 echo "Job info from STEP 2: $OUTPUT_STRING"
 if [ $? -ne 0 ]; then
@@ -47,7 +47,7 @@ fi
 JOB_ID_1=$(echo $OUTPUT_STRING | grep -oP '\d+')
 
 # Step 3: Submit the triplets
-section "STEP 3: Water Triplet Analysis"
+section "STEP 3: Measure Water Triplets"
 cd water_triplets
 OUTPUT_STRING_2=$(python submit_triplets.py "../${PROTEIN_NAME}.pdb" ../traj.dcd --dependency=afterany:$JOB_ID_1)
 echo "Output from STEP 3: $OUTPUT_STRING_2"
@@ -76,7 +76,7 @@ for job in "${JOB_ID_2_ARRAY[@]}"; do
 done
 
 # Step 4: Run Python scripts
-section "STEP 4: Processing Triplet Angles & Output PDBs"
+section "STEP 4: Process Triplet Angles & Output PDBs"
 python process_angles.py "../${PROTEIN_NAME}.pdb"
 if [ $? -ne 0 ]; then
     echo "Error in STEP 4a (processing angles). Exiting."
@@ -92,4 +92,4 @@ fi
 # Completion message
 section "COMPLETION"
 echo "Completed all 4 steps of the water structure-hydrophobicity procedure!"
-echo "Open the pdbs on your personal computer and color them in ChimeraX or Pymol. View the histograms and plots."
+echo "Open the pdbs and color them in ChimeraX or Pymol. Check out the plots."
