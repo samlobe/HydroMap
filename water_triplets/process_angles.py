@@ -160,14 +160,15 @@ else:
         avg_num_angles_list.append(avg_num_angles)
         group_counter += 1
 
-# TOMORROW TASKS:
-# add mdanalysis selection strings to the df
-
-# turn into DataFrame
+# Turn into DataFrame
 avg_num_angles_list = np.array(avg_num_angles_list).reshape(-1, 1)
 groups_selection = np.array(groups_selection).reshape(-1, 1)
 groups_data = np.hstack((np.array(group_distros), avg_num_angles_list, groups_selection))
-groups_df = pd.DataFrame(data=groups_data, index=group_names, columns=np.append(bin_mids, 'avg_residue_angles', 'MDAnalysis_selection_strings'))
+# create column names list
+columns_after_bin_mids = np.array(['avg_residue_angles', 'MDAnalysis_selection_strings'])
+columns = np.append(bin_mids,columns_after_bin_mids)
+groups_df = pd.DataFrame(data=groups_data, index=group_names, columns=columns)
 groups_df.to_csv(f'{protein_name}_triplet_data.csv')
+print(f'Successfully processed angles and outputted {protein_name}_triplet_data.csv')
 
 #%%

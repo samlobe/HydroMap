@@ -56,6 +56,11 @@ PCs_df = convert_triplets.get_PCs(groups_df)
 # (actually the tempfactor for each atom is set, and later we will use ChimeraX or nglview to color the protein)
 def color_pdb(pdb_path, df_wProp_selecStr, property):
     protein_name = pdb_path[:-4]
+    # check if the protein name has '/' in it (e.g. '../myProtein')
+    # if so read the part after the last '/' (e.g. 'myProtein')
+    if '/' in protein_name:
+       protein_name = protein_name.split('/')[-1] 
+
     # load the structure
     u = mda.Universe(pdb_path)
     # initialize all tempfactors to -100
@@ -67,8 +72,8 @@ def color_pdb(pdb_path, df_wProp_selecStr, property):
         for atom in u.select_atoms(selection_string):
             atom.tempfactor = np.around(df_wProp_selecStr[property][group],2)
     # save the structure
-    u.atoms.write(f'{protein_name}_{property}_colored.pdb')
-    print(f'Outputted {protein_name}_{property}_colored.pdb')
+    u.atoms.write(f'../{protein_name}_{property}_colored.pdb')
+    print(f'Outputted ../{protein_name}_{property}_colored.pdb')
     # return the MDAnalysis universe object
     return u
 
@@ -96,7 +101,8 @@ axes[1,1].set_ylabel('Number of groups',fontsize=14)
 for ax in axes.flatten():
     ax.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
 plt.tight_layout()
-plt.savefig(f'{protein_name}_histograms.png')
+plt.savefig(f'../{protein_name}_histograms.png')
+print(f'Outputted ../{protein_name}_histograms.png')
 # plt.show() # uncomment if running this on your personal computer
 #%%
 # plot heatmaps of PC1 vs PC2, PC1 vs PC3, and PC2 vs PC3 in 1x3 grid
@@ -116,7 +122,8 @@ for i,res in enumerate(PCs_df.index):
     axes[1].annotate(res,(PCs_df['PC1'].iloc[i],PCs_df['PC3'].iloc[i]))
     axes[2].annotate(res,(PCs_df['PC2'].iloc[i],PCs_df['PC3'].iloc[i]))
 plt.tight_layout()
-plt.savefig(f'{protein_name}_PCs_2D.png')
+plt.savefig(f'../{protein_name}_PCs_2D.png')
+print(f'Outputted ../{protein_name}_PCs_2D.png')
 # plt.show() # uncomment if running this on your personal computer
 #%%
 # now you can use ChimeraX or Pymol (or nglview) to color the protein
