@@ -12,7 +12,7 @@ This analysis takes <25 min of computation for a 100 residue protein, including 
 ### **Output:**
 - pdb file with dewetting free energy predictions of each residue (or custom group) listed in the tempfactor column
 - 3 pdb files with the 3 principal component contributions of each residue (or custom group) listed in the tempfactor column
-- csv file with triplet distribution for each residue (or custom group), and many txt files of raw data triplet angles  
+- csv file with triplet distribution for each residue (or custom group), histograms and plots of dewetting free energy predictions & principal componenet contributions, and many txt files of raw data triplet angles  
 
 ### **Tutorial:**
 [Click here](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for the complete tutorial on Sam Lobo's Roam page which includes detailed install instructions, the commands necessary for each step in the procedure, some background info, and FAQs (e.g. "How can I get this working on my cluster?").
