@@ -4,6 +4,12 @@ import os
 import subprocess
 import argparse
 import numpy as np
+from glob import glob
+
+# Check for the compile fortran code in the current directory
+matching_files = glob("waterlib*.so")
+if not matching_files:
+    raise FileNotFoundError("Could not find a compiled fortran code in the current directory.\nPlease compile the fortran code first: `f2py -c -m waterlib waterlib.f90`\n(Assuming the compile fortran code starts with waterlib and ends with .so)")
 
 # Setting up arguments parser
 parser = argparse.ArgumentParser(description='Set groups in your protein to analyze their triplets.\nSubmit analysis jobs in batches.\nSelects all residues (assuming 1 chain) by default.')
@@ -24,6 +30,11 @@ if not protein_name.endswith('.pdb'):
     protein_name += '.pdb'
 pdb_path = os.path.join('..', protein_name)  # Uses the protein name from command line argument
 protein_processed = f'{protein_name[:-4]}_processed' # name of the processed protein (ignoring extension)
+
+# check if the processed protein file exists
+if not os.path.exists(f'../{protein_processed}.gro'):
+    raise ValueError(f"Processed protein file {protein_processed}.gro does not exist.")
+
 
 # convert the time limit to hh:mm:ss format
 timeLimit = f"{args.timeLimit//60:02d}:{args.timeLimit%60:02d}:00"
