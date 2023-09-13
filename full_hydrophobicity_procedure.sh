@@ -7,8 +7,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --time=05:00:00
-#SBATCH --mail-user=lobo@ucsb.edu # uncomment these two lines and include email if desired
-#SBATCH --mail-type=ALL
+# #SBATCH --mail-user=<your_email> # uncomment these two lines and include email if desired
+# #SBATCH --mail-type=ALL
 
 # Function to display section headers
 section() {
@@ -24,12 +24,14 @@ if [ -z "$1" ]; then
 fi
 
 PROTEIN_NAME="$1"
+# Change to the submit directory
+cd $SLURM_SUBMIT_DIR
+source ~/.bashrc # Pod cluster uses bash shell
+echo "Activating conda environment: 'hydrophobicity'"
+conda activate hydrophobicity
 
 # Step 1: Process with GROMACS
 section "STEP 1: Build System with GROMACS"
-echo "Activating conda environment: 'hydrophobicity'"
-conda init bash # Pod cluster uses bash shell
-conda activate hydrophobicity
 bash process_with_gromacs.sh "${PROTEIN_NAME}.pdb"
 if [ $? -ne 0 ]; then
     echo "Error in STEP 1. Exiting."
@@ -74,6 +76,7 @@ for job in "${JOB_ID_2_ARRAY[@]}"; do
         sleep 60
     done
 done
+echo "Jobs from STEP 3 completed!"
 
 # Step 4: Run Python scripts
 section "STEP 4: Process Triplet Angles & Output PDBs"

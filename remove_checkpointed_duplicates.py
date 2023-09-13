@@ -22,7 +22,6 @@ os.rename("energies.log", "energies_with_duplicates.log")
 
 # Step 2: Remove duplicate time steps and overwrite the energies.log
 unique_times, indices_to_keep = np.unique(times, return_index=True)
-print(indices_to_keep)
 with open("energies.log", "w") as file:
     file.write(lines[0])  # Write the header
     for i in indices_to_keep:
