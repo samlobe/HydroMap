@@ -21,6 +21,7 @@ parser.add_argument('trajectory', help="trajectory file (e.g. '../traj.dcd')")
 parser.add_argument('--multiChain', action='store_true', help="protein has multiple chains")
 parser.add_argument('--groupsFile', help='File containing MDAnalysis selection strings, one per line.')
 parser.add_argument('-t','--timeLimit', type=int, default=10, help='time limit (minutes) for analysis')
+parser.add_argument('--dependency', type=str, default=None, help='SLURM job dependency argument. Example: "afterany:1234567"')
 args = parser.parse_args()
 
 # make sure user uses (1) --multiChain or (2) --groupsFile or (3) neither
@@ -48,7 +49,7 @@ if '/' in protein_name:
 
 trajectory = args.trajectory
 # check if the trajectory file exists
-if not os.path.exists(args.trajectory):
+if not os.path.exists(args.trajectory) and args.dependency is None:
     raise ValueError(f"Can't find the trajectory file: {trajectory}")
 
 # convert the time limit to hh:mm:ss format
@@ -128,8 +129,13 @@ for group_index in range(0, total_groups, jobs_per_script):
         create_each_residue_script(batch_num, jobs_in_script, resids[group_index:end_group_index])
     batch_num += 1
 
-print(f"Generated {batch_num-1} bash scripts.")
+print(f"Generated submission scripts.")
 
 # Execute the bash scripts using sbatch
 for j in range(1, batch_num):
-    subprocess.run(["sbatch", f"tripletsBatch{j}.sh"])
+    if args.dependency:
+        subprocess.run(["sbatch", f"--dependency={args.dependency}", f"tripletsBatch{j}.sh"])
+    else:
+        subprocess.run(["sbatch", f"tripletsBatch{j}.sh"])
+
+print(f"Submitted jobs with parallelized water triplet measurements on Pod's CPUs.")
