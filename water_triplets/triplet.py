@@ -9,11 +9,11 @@ import argparse
 import shutil
 
 # Setting up argparse
-parser = argparse.ArgumentParser(description='Process some protein-related inputs.')
+parser = argparse.ArgumentParser(description='Process some protein-related inputs.\nExample usage: `python triplet.py ../myProtein_processed.gro ../traj.dcd -res 42`')
 
 # Add arguments
-parser.add_argument('protein',type=str,help="Processed protein structure file (e.g. myProtein_processed[.gro])")
-parser.add_argument('trajectory',default='../traj.dcd',type=str,help='Trajectory file name. Default = ../traj.dcd')
+parser.add_argument('protein',type=str,help="Processed protein structure file (e.g. '../myProtein_processed.gro')")
+parser.add_argument('trajectory', type=str, help="Trajectory file name (e.g. '../traj.dcd')")
 parser.add_argument('-res', '--resid', type=int, help='resid argument')
 parser.add_argument('-ch', '--chain', help='segid (i.e. chainID) argument')
 parser.add_argument('-t', '--time', type=float, default=5.0, help='Last x ns. Default is 5 ns.')
@@ -29,6 +29,34 @@ resid = args.resid
 segid = args.chain
 last_x_ns = args.time
 hydrationCutoff = args.hydrationCutoff
+
+# Ensure that the protein file ends with '.gro'
+if not protein_processed.endswith('.gro'):
+    protein_processed += '.gro'
+
+# Ensure that the protein file exists
+if not os.path.exists(protein_processed):
+    print(f"Error: Can't find {protein_processed}")
+    sys.exit(1)
+
+# Ensure that the trajectory file exists
+if not os.path.exists(args.trajectory):
+    print(f"Error: Can't find {args.trajectory}")
+    sys.exit(1)
+
+structure_path = protein_processed  # Looking at structure file (usually in parent directory)
+traj_path = args.trajectory
+
+# Get the protein name from the protein file name
+if protein_processed.endswith('_processed.gro'):
+    protein_name = protein_processed[:-14] # excluding the '_processed.gro' part
+else:
+    protein_name = protein_processed[:-4] # excluding the '.gro' part
+
+# check if the protein name has '/' in it (e.g. '../myProtein')
+# if so read the part after the last '/' (e.g. 'myProtein')
+if '/' in protein_name:
+    protein_name = protein_name.split('/')[-1]
 
 ### SELECT YOUR GROUP OF INTEREST WITH MDANALYSIS SELECTION LANGUAGE \
 if args.groupsFile and args.groupNum:
@@ -48,12 +76,6 @@ elif args.resid:
 else:
     print("Error: Please either provide the -res (and -ch flags) or the --groupFile and --groupNum flags.")
     sys.exit(1)
-
-if not protein_processed.endswith('.gro'):
-    protein_processed += '.gro'
-protein_name = protein_processed[:-14] # excluding the '_processed.gro' part
-structure_path = os.path.join('..', protein_processed)  # Looking at structure file in parent directory
-traj_path = args.trajectory
 
 ### LOAD THE MD TRAJECTORY
 u = mda.Universe(structure_path,traj_path)

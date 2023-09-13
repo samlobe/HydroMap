@@ -6,15 +6,18 @@ import argparse
 import numpy as np
 from glob import glob
 
-# Check for the compile fortran code in the current directory
-matching_files = glob("waterlib*.so")
+# Check for the compiled fortran code in the current directory
+matching_files = glob("waterlib*.so") + glob("waterlib*.pyd")
 if not matching_files:
-    raise FileNotFoundError("Could not find a compiled fortran code in the current directory.\nPlease compile the fortran code first: `f2py -c -m waterlib waterlib.f90`\n(Assuming the compile fortran code starts with waterlib and ends with .so)")
+    raise FileNotFoundError("Could not find a compiled Fortran code in the current directory. (Looking for these patterns: waterlib*.so or waterlib*.pyd) \n"
+                            "Please compile the Fortran code first. Example compilation using f2py (included with anaconda):`f2py -c -m waterlib waterlib.f90`\n"
+                            "Please consult the tutorial (on GitHub) and leave an issue on the GitHub page if you have trouble compiling waterlib.f90's fortran code.\n")
 
 # Setting up arguments parser
 parser = argparse.ArgumentParser(description='Set groups in your protein to analyze their triplets.\nSubmit analysis jobs in batches.\nSelects all residues (assuming 1 chain) by default.')
 # adding arguments
-parser.add_argument('protein', help="unprocessed protein file (e.g. <protein>[.pdb])\n")
+parser.add_argument('protein', help="unprocessed protein file (e.g. '../myProtein.pdb')")
+parser.add_argument('trajectory', help="trajectory file (e.g. '../traj.dcd')")
 parser.add_argument('--multiChain', action='store_true', help="protein has multiple chains")
 parser.add_argument('--groupsFile', help='File containing MDAnalysis selection strings, one per line.')
 parser.add_argument('-t','--timeLimit', type=int, default=10, help='time limit (minutes) for analysis')
@@ -28,13 +31,17 @@ if args.multiChain and args.groupsFile:
 protein_name = args.protein
 if not protein_name.endswith('.pdb'):
     protein_name += '.pdb'
-pdb_path = os.path.join('..', protein_name)  # Uses the protein name from command line argument
+pdb_path = protein_name  # Uses the protein name from command line argument
 protein_processed = f'{protein_name[:-4]}_processed' # name of the processed protein (ignoring extension)
 
 # check if the processed protein file exists
-if not os.path.exists(f'../{protein_processed}.gro'):
-    raise ValueError(f"Processed protein file {protein_processed}.gro does not exist.")
+if not os.path.exists(f'{protein_processed}.gro'):
+    raise ValueError(f"Can't find the processed protein file: {protein_processed}.gro")
 
+trajectory = args.trajectory
+# check if the trajectory file exists
+if not os.path.exists(args.trajectory):
+    raise ValueError(f"Can't find the trajectory file: {trajectory}")
 
 # convert the time limit to hh:mm:ss format
 timeLimit = f"{args.timeLimit//60:02d}:{args.timeLimit%60:02d}:00"
@@ -78,7 +85,7 @@ def create_each_residue_script(batch_num, jobs_in_script, some_resids):
         f.write(header.format(batch_num=batch_num, jobs_in_script=jobs_in_script))
         # loop through the groups
         for resid in some_resids:
-            f.write(f"srun --ntasks 1 --exclusive -c 1 python triplet.py {protein_processed} -res {resid} &\n")
+            f.write(f"srun --ntasks 1 --exclusive -c 1 python triplet.py {protein_processed} {trajectory} -res {resid} &\n")
         f.write("wait\n")
 
  # function to make scripts to analyze each residue when there are multiple chains
@@ -87,7 +94,7 @@ def create_each_residue_multiChain_script(batch_num, jobs_in_script, some_resids
         f.write(header.format(batch_num=batch_num, jobs_in_script=jobs_in_script))
         # loop through the groups
         for resid,segid in zip(some_resids,some_segids):
-            f.write(f"srun --ntasks 1 --exclusive -c 1 python triplet.py {protein_processed} -res {resid} -ch {segid} &\n")
+            f.write(f"srun --ntasks 1 --exclusive -c 1 python triplet.py {protein_processed} {trajectory} -res {resid} -ch {segid} &\n")
         f.write("wait\n")
 
  # function to make scripts to analyze custom groups
@@ -96,7 +103,7 @@ def create_custom_groups_script(batch_num, jobs_in_script, some_groupNums):
         f.write(header.format(batch_num=batch_num, jobs_in_script=jobs_in_script))
         # loop through the groups
         for groupNum in some_groupNums: # groupNum is the index of the group in the groups file, using 1-indexing
-            f.write(f"srun --ntasks 1 --exclusive -c 1 python triplet.py {protein_processed} --groupsFile {args.groupsFile} --groupNum {groupNum} &\n")
+            f.write(f"srun --ntasks 1 --exclusive -c 1 python triplet.py {protein_processed} {trajectory} --groupsFile {args.groupsFile} --groupNum {groupNum} &\n")
         f.write("wait\n")
 
 ### STEP THROUGH ALL THE GROUPS, ASSIGN TO BATCHES, AND CREATE BATCH ANALYSIS SCRIPTS ###

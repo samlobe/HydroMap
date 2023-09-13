@@ -1,7 +1,6 @@
 #%%
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import MDAnalysis as mda
 import argparse
 import os
@@ -24,10 +23,25 @@ if args.multiChain and args.groupsFile:
     raise ValueError("You can't use both --multiChain and --groupsFile. Please choose one.")
 
 # Assign arguments
-protein_name = args.protein
-if not protein_name.endswith('.pdb'):
-    protein_name += '.pdb'
-pdb_path = os.path.join('..', protein_name)  # Uses the protein name from command line argument
+protein = args.protein
+if not protein.endswith('.pdb'):
+    protein += '.pdb'
+pdb_path = protein  # Uses the protein name from command line argument
+
+# if the protein file doesn't exist, exit
+if not os.path.exists(pdb_path):
+    print(f"Error: Can't find {pdb_path}")
+    sys.exit(1)
+
+# extract protein name from the protein file name
+protein_name = protein[:-4] # excluding the '.pdb' part
+# check if the protein name ends with '_withH', if so remove it
+if protein_name.endswith('_withH'):
+    protein_name = protein_name[:-5]
+# check if the protein name has '/' in it (e.g. '../myProtein')
+# if so read the part after the last '/' (e.g. 'myProtein')
+if '/' in protein_name:
+    protein_name = protein_name.split('/')[-1]
 
 # read in the protein file
 u = mda.Universe(pdb_path)
@@ -104,7 +118,7 @@ if args.groupsFile: # reading the custom groups in the groups file if given
         groups_selection = [line for line in f if not line.strip().startswith('#')]
     total_groups = len(groups_selection)
     for group_num in tqdm(np.arange(1,total_groups+1)):
-        group_file = f'{script_dir}/angles/{protein_name[:-4]}_group{group_num}_angles.txt'
+        group_file = f'{script_dir}/angles/{protein_name}_group{group_num}_angles.txt'
         if not os.path.exists(group_file):
             print(f'Group {group_num} data is missing.')
             continue
@@ -124,7 +138,7 @@ else:
     groups_selection = [] # for MDAnalysis selection strings
     for i, (resid, segid) in enumerate(tqdm(zip(resids, segids))):
         if args.multiChain:
-            group_file = f'{script_dir}/angles/{protein_name[:-4]}_res{resid}_chain{segid}_angles.txt'
+            group_file = f'{script_dir}/angles/{protein_name}_res{resid}_chain{segid}_angles.txt'
             if not os.path.exists(group_file):
                 print(f'Data missing for: residue {resid} chain {segid}')
                 continue
@@ -132,7 +146,7 @@ else:
             group_names.append(f'{sequence[seq_id]}{resid}_chain{segid}')
             groups_selection.append(f'resid {resid} and segid {segid}') # not excluding hydrogens
         else:
-            group_file = f'{script_dir}/angles/{protein_name[:-4]}_res{resid}_angles.txt'
+            group_file = f'{script_dir}/angles/{protein_name}_res{resid}_angles.txt'
             if not os.path.exists(group_file):
                 print(f'Data missing for: residue {resid}')
                 continue

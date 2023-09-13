@@ -2,16 +2,16 @@
 import numpy as np
 import pandas as pd
 import os
-from tqdm import tqdm
+import sys
 import matplotlib.pyplot as plt
 import argparse
 import convert_triplets
 import MDAnalysis as mda
 
 # Setting up argparse
-parser = argparse.ArgumentParser(description='Generate predictions from the triplet distribution and color pdb.')
+parser = argparse.ArgumentParser(description='Generate predictions from the triplet distribution and color pdb.\nExample usage: `python analyze_groups.py ../myProtein_withH.pdb`')
 # Add arguments
-parser.add_argument('protein', help="unprocessed protein pdb file to color, e.g. myProtein.pdb\n(recommended to use a pdb of protein without solvent or ions, and with hydrogens present)")
+parser.add_argument('protein', help="unprocessed protein pdb file to color, e.g. myProtein_withH.pdb\n(recommended to use a pdb of protein without solvent or ions, and with hydrogens present)")
 
 args = parser.parse_args()
 
@@ -19,8 +19,22 @@ args = parser.parse_args()
 protein = args.protein
 if not protein.endswith('.pdb'):
     protein += '.pdb'
-pdb_path = os.path.join('..', protein)  # Uses the protein name from command line argument
+pdb_path = protein  # Uses the protein name from command line argument
+
+# if the protein file doesn't exist, exit
+if not os.path.exists(pdb_path):
+    print(f"Error: Can't find {pdb_path}")
+    sys.exit(1)
+
+# extract protein name from the protein file name
 protein_name = protein[:-4] # excluding the '.pdb' part
+# check if the protein name ends with '_withH', if so remove it
+if protein_name.endswith('_withH'):
+    protein_name = protein_name[:-5]
+# check if the protein name has '/' in it (e.g. '../myProtein')
+# if so read the part after the last '/' (e.g. 'myProtein')
+if '/' in protein_name:
+    protein_name = protein_name.split('/')[-1]
 
 # Find the data file with the triplet angles
 groups_df = pd.read_csv(f'{protein_name}_triplet_data.csv',index_col=0)
@@ -83,7 +97,7 @@ for ax in axes.flatten():
     ax.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
 plt.tight_layout()
 plt.savefig(f'{protein_name}_histograms.png')
-plt.show()
+# plt.show() # uncomment if running this on your personal computer
 #%%
 # plot heatmaps of PC1 vs PC2, PC1 vs PC3, and PC2 vs PC3 in 1x3 grid
 fig, axes = plt.subplots(1,3,figsize=(15,5))
@@ -103,7 +117,7 @@ for i,res in enumerate(PCs_df.index):
     axes[2].annotate(res,(PCs_df['PC2'].iloc[i],PCs_df['PC3'].iloc[i]))
 plt.tight_layout()
 plt.savefig(f'{protein_name}_PCs_2D.png')
-plt.show()
+# plt.show() # uncomment if running this on your personal computer
 #%%
 # now you can use ChimeraX or Pymol (or nglview) to color the protein
 # With ChimeraX: open the pdb with your property-of-interest set to the tempfactor (i.e. bfactor)
