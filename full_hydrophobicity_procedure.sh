@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name=ProteinHydrophobicity
-#SBATCH --output=ProteinHydrophobicity_%j.out
-#SBATCH --error=ProteinHydrophobicity_%j.err
+#SBATCH --job-name=Protein_Hydrophobicity
+#SBATCH --output=Hydrophobicity_%j.out
+#SBATCH --error=Hydrophobicity_%j.err
 #SBATCH --partition=batch
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -24,6 +24,7 @@ if [ -z "$1" ]; then
 fi
 
 PROTEIN_NAME="$1"
+echo "ANALYZING ${PROTEIN_NAME}\n\n"
 # Change to the submit directory
 cd $SLURM_SUBMIT_DIR
 source ~/.bashrc # Pod cluster uses bash shell

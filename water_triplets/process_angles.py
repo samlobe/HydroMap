@@ -9,18 +9,22 @@ from collections import OrderedDict
 from tqdm import tqdm
 
 # Setting up argparse
-parser = argparse.ArgumentParser(description='Process the triplet angles of your protein.')
+parser = argparse.ArgumentParser(description='Read the triplet angles of your protein and output triplet distributions.')
 # Add arguments
 parser.add_argument('protein', help="unprocessed protein file ( e.g. <protein>[.pdb] )")
 parser.add_argument('--multiChain', action='store_true', help="protein has multiple chains")
-parser.add_argument('--groupsFile', help='File containing MDAnalysis selection strings, one per line.')
+parser.add_argument('--groupsFile', type=str, help='to reference a file containing your custom groups (i.e. MDAnalysis selection strings, one group per line).')
+parser.add_argument('--oneAnglesFile', type=str, help='to process data from one angles file (e.g. angles/<protein>_<selection>_angles.txt)')
 
 # Read arguments
 args = parser.parse_args()
+anglesFile = args.oneAnglesFile
 
-# Make sure user uses (1) --multiChain or (2) --groupsFile or (3) neither
-if args.multiChain and args.groupsFile:
-    raise ValueError("You can't use both --multiChain and --groupsFile. Please choose one.")
+# Count how many of the exclusive options are set
+num_set = sum([args.multiChain, args.groupsFile is not None, args.oneAnglesFile is not None])
+# Check if more than one of the exclusive arguments are set
+if num_set > 1:
+    parser.error("You can only use one of --multiChain, --groupsFile, or --oneAnglesFile, not multiple.")
 
 # Assign arguments
 protein = args.protein
@@ -101,18 +105,31 @@ def read_pdb_get_sequence(pdb_file):
 sequence = read_pdb_get_sequence(pdb_path)
 
 # Write sequence to FASTA
-with open(f'{protein_name[:-4]}.fasta', 'w') as out:
-    out.write(f'>{protein_name[:-4]}\n')
+with open(f'{protein_name}.fasta', 'w') as out:
+    out.write(f'>{protein_name}\n')
     out.write(sequence + '\n')
 
-#%% get residue data
+#%% get residue/group data
 script_dir = os.path.dirname(__file__) # absolute dir the script is in
 group_distros = []
 group_names = []
 avg_num_angles_list = []
 group_counter = 0
 
-if args.groupsFile: # reading the custom groups in the groups file if given
+if anglesFile: # reading the angles from the angles file if given
+    print(f"Processing your angles file {anglesFile} ...")
+    # select after the protein name and before the '_angles.txt' part
+    group_name = anglesFile.split('/')[-1][len(protein_name)+1:-11] # just one group name
+    # replace the _ with a space in the group_name
+    group_selection = group_name.replace('_',' ') # MDAnalysis selection string
+    groups_selection = [group_selection] # just one entry
+    group_names.append(group_name)
+    group_angles,avg_num_angles = read_angles(anglesFile)
+    bin_mids, histo = histo_line(group_angles)
+    group_distros.append(histo)
+    avg_num_angles_list.append(avg_num_angles)
+
+elif args.groupsFile: # reading the custom groups in the groups file if given
     print("Processing your custom groups' data...")
     with open(args.groupsFile, 'r') as f:
         groups_selection = [line for line in f if not line.strip().startswith('#')]
@@ -129,6 +146,7 @@ if args.groupsFile: # reading the custom groups in the groups file if given
         group_distros.append(histo)
         avg_num_angles_list.append(avg_num_angles)
         group_counter += 1
+
 # if no custom groups file, then use the resids (and segids)
 else:
     print("Processing each residue's data ...")

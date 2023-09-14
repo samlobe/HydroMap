@@ -6,13 +6,6 @@ import argparse
 import numpy as np
 from glob import glob
 
-# Check for the compiled fortran code in the current directory
-matching_files = glob("waterlib*.so") + glob("waterlib*.pyd")
-if not matching_files:
-    raise FileNotFoundError("Could not find a compiled Fortran code in the current directory. (Looking for these patterns: waterlib*.so or waterlib*.pyd) \n"
-                            "Please compile the Fortran code first. Example compilation using f2py (included with anaconda):`f2py -c -m waterlib waterlib.f90`\n"
-                            "Please consult the tutorial (on GitHub) and leave an issue on the GitHub page if you have trouble compiling waterlib.f90's fortran code.\n")
-
 # Setting up arguments parser
 parser = argparse.ArgumentParser(description='Set groups in your protein to analyze their triplets.\nSubmit analysis jobs in batches.\nSelects all residues (assuming 1 chain) by default.')
 # adding arguments

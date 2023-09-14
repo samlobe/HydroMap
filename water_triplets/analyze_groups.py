@@ -9,7 +9,7 @@ import convert_triplets
 import MDAnalysis as mda
 
 # Setting up argparse
-parser = argparse.ArgumentParser(description='Generate predictions from the triplet distribution and color pdb.\nExample usage: `python analyze_groups.py ../myProtein_withH.pdb`')
+parser = argparse.ArgumentParser(description="Generate dewetting free energy predictions and PC contributions from the triplet distributions, and output 'colored' pdb.\nExample usage: `python analyze_groups.py ../myProtein_withH.pdb`")
 # Add arguments
 parser.add_argument('protein', help="unprocessed protein pdb file to color, e.g. myProtein_withH.pdb\n(recommended to use a pdb of protein without solvent or ions, and with hydrogens present)")
 
@@ -42,14 +42,29 @@ groups_df = pd.read_csv(f'{protein_name}_triplet_data.csv',index_col=0)
 #%%
 # convert triplet distribution to predicted dewetting free energy
 # using the model from fitting to single amino acids
-dewet_df = convert_triplets.singleAA_dewet_fit(groups_df)
+dewet_df = convert_triplets.singleAA_dewet_fit(groups_df,'a99SBdisp')
 # the columns are 'FDewet (kJ/mol)' and 'MDAnalysis_selection_string'
+
+## modelling hydrophobicity in a03ws and CHARMM36m:
+# dewet_df = convert_triplets.singleAA_dewet_fit(groups_df,'a03ws')
+# dewet_df = convert_triplets.singleAA_dewet_fit(groups_df,'C36m')
+
+## to apply our hydrophobicity model to other FFs, you should:
+## 1) add that FFs bulk water triplet distribution to 'bulk_water_triplets.csv', and
+## 2) use this function:
+# dewet_df = convert_triplets.otherFF_singleAA_dewet_fit(groups_df,FF)
+
 #%%
 # convert triplet distribution to PC1, PC2, and PC3 contributions
 # using Robinson / Jiao's PCs from their triplet distributions
 # (they subtracted out the bulk water triplet distribution before getting PCs)
-PCs_df = convert_triplets.get_PCs(groups_df)
+PCs_df = convert_triplets.get_PCs(groups_df,'a99SBdisp')
 ## the columns are 'PC1','PC2','PC3', and 'MDAnalysis_selection_string'
+
+## if using other force fields:
+# PCs_df = convert_triplets.get_PCs(groups_df,'C36m')
+# PCs_df = convert_triplets.get_PCs(groups_df,'a03ws')
+# PCs_df = convert_triplets.get_PCs(groups_df,FF) # if you added the FF's bulk water distribution to to 'bulk_water_triplets.csv'
 
 #%%
 # function to color the protein based on a property (e.g. dewetting free energy or a PC)

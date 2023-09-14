@@ -76,10 +76,15 @@ if args.restrain:
     force.addPerParticleParameter("y0")  # y coordinate of the restrained atom
     force.addPerParticleParameter("z0")  # z coordinate of the restrained atom
 
-    # Loop through all atoms in the protein, if it's not a hydrogen atom, add it to the force for restraining
-    for atom in top.topology.atoms():
-        if atom.element.symbol != 'H':
-            force.addParticle(atom.index, gro.positions[atom.index].value_in_unit(nanometers))
+    # Loop through all residues in the topology
+    for residue in top.topology.residues():
+        # Check if the residue is not water or typical ion names (you can expand this list if needed)
+        if residue.name not in ["SOL","HOH", "NA","CL","Na+", "Cl-", "K+", "Mg2+", "Ca2+"]:
+            # Loop through all atoms in the residue
+            for atom in residue.atoms():
+                # Check if the atom is not a hydrogen
+                if atom.element.symbol != 'H':
+                    force.addParticle(atom.index, gro.positions[atom.index].value_in_unit(nanometers))
 
     # Add the restraining force to the system
     system.addForce(force)

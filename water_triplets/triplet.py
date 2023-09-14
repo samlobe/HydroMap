@@ -7,9 +7,17 @@ import sys
 import os
 import argparse
 import shutil
+from glob import glob
+
+# Check for the compiled fortran code in the current directory
+matching_files = glob("waterlib*.so") + glob("waterlib*.pyd")
+if not matching_files:
+    raise FileNotFoundError("Could not find a compiled Fortran code in the current directory. (Looking for these patterns: waterlib*.so or waterlib*.pyd) \n"
+                            "Please compile the Fortran code first. Example compilation using f2py (included with anaconda):`f2py -c -m waterlib waterlib.f90`\n"
+                            "Please consult the tutorial (on GitHub) and leave an issue on the GitHub page if you have trouble compiling waterlib.f90's fortran code.\n")
 
 # Setting up argparse
-parser = argparse.ArgumentParser(description='Process some protein-related inputs.\nExample usage: `python triplet.py ../myProtein_processed.gro ../traj.dcd -res 42`')
+parser = argparse.ArgumentParser(description='Compile water triplet angles around the residue/custom group in your protein.\nExample usage: `python triplet.py ../myProtein_processed.gro ../traj.dcd -res 42`')
 
 # Add arguments
 parser.add_argument('protein',type=str,help="Processed protein structure file (e.g. '../myProtein_processed.gro')")
@@ -19,6 +27,7 @@ parser.add_argument('-ch', '--chain', help='segid (i.e. chainID) argument')
 parser.add_argument('-t', '--time', type=float, default=5.0, help='Last x ns. Default is 5 ns.')
 parser.add_argument('--groupsFile', type=str, help='File containing MDAnalysis selection strings, one per line.')
 parser.add_argument('--groupNum', type=int, help='Line number in groupFile to use as the selection string.')
+parser.add_argument('--selection', type=str, help='MDAnalysis selection string for your custom atom group.')
 parser.add_argument('--hydrationCutoff', type=float, default=4.25, help='Cutoff distance (in Å) to define the hydration waters. Default is 4.25 Å.)')
 
 args = parser.parse_args()
@@ -59,22 +68,24 @@ if '/' in protein_name:
     protein_name = protein_name.split('/')[-1]
 
 ### SELECT YOUR GROUP OF INTEREST WITH MDANALYSIS SELECTION LANGUAGE \
-if args.groupsFile and args.groupNum:
+if args.selection:
+    my_group = args.selection
+elif args.groupsFile and args.groupNum is not None:
     # Load selection strings from the provided file
     try:
         with open(args.groupsFile, 'r') as f:
             group_strings = f.readlines()
-        my_residue = group_strings[args.groupNum - 1].strip()  # 1-based index for user-friendliness
+        my_group = group_strings[args.groupNum - 1].strip()  # 1-based index for user-friendliness
     except (IndexError, FileNotFoundError, IOError) as e:
         print(f"Error loading custom groups' selection strings from file: {e}")
         sys.exit(1)
 elif args.resid is not None:
     if args.chain is not None:  # If a chain was provided
-        my_residue = f'resid {resid} and segid {segid} and not name H*'  # selecting heavy atoms
+        my_group = f'resid {resid} and segid {segid} and not name H*'  # selecting heavy atoms
     else:  # No chain provided
-        my_residue = f'resid {resid} and not name H*'  # selecting heavy atoms without chain
+        my_group = f'resid {resid} and not name H*'  # selecting heavy atoms without chain
 else:
-    print("Error: Please either provide the -res (and -ch flags) or the --groupFile and --groupNum flags.")
+    print("Error: Please either provide the -res (and -ch flags) OR the --groupFile and --groupNum flags OR a MDAnalysis selection string in --selection.")
     sys.exit(1)
 
 ### LOAD THE MD TRAJECTORY
@@ -86,7 +97,7 @@ frames_to_load = int((last_x_ns * 1e3) / timestep)
 
 ### ERROR CHECKING YOUR SELECTION
 try:
-    res_group = u.select_atoms(my_residue)
+    res_group = u.select_atoms(my_group)
     if len(res_group) == 0:
         raise ValueError
 except ValueError:
@@ -94,7 +105,7 @@ except ValueError:
     sys.exit(1)
 
 # throw an error if the user selected any atoms that are waters
-resnames = [atom.resname for atom in u.select_atoms(my_residue)]
+resnames = [atom.resname for atom in u.select_atoms(my_group)]
 if 'SOL' in resnames:
     print(f"Error: one or more of your selected atoms were waters.")
     print("You probably meant to select protein atoms. Please check your selection criteria.")
@@ -116,8 +127,14 @@ highCut = 3.5 # Å; cutoff distance to establish the neighbors of each hydration
 # Each sublist contains the 3-body angle for the waters in the first shell around your group of interest.
 angles_list = [[] for i in range(len(u.trajectory))]
 
+# if using --selection, come up with an apppropriate name for the output files
+if args.selection:
+    group_name = my_group.replace(" ","_")
+
 # Create a checkpoint file to save progress (every 1000 frames)
-if args.groupsFile and args.groupNum:
+if args.selection:
+    checkpoint_filename = f'checkpoint_{protein_name}_selection_{group_name}_angles.txt'
+elif args.groupsFile and args.groupNum:
     checkpoint_filename = f'checkpoint{protein_name}_group{args.groupNum}_angles.txt'
 elif args.chain is not None:
     checkpoint_filename = f'checkpoint_{protein_name}_res{resid}_chain{segid}_angles.txt'
@@ -142,7 +159,7 @@ if os.path.exists(checkpoint_filename):
 start_frame_for_last_x_ns = max(0,total_frames - frames_to_load) # ensure it's not negative
 for i,ts in tqdm(enumerate(u.trajectory[start_frame_for_last_x_ns:])):
     # SELECT HYDRATION WATERS
-    shell_waters = u.select_atoms(f'({waters}) and around {hydrationCutoff} ({my_residue})') # 4.25Å is ~2 water layers from the residue
+    shell_waters = u.select_atoms(f'({waters}) and around {hydrationCutoff} ({my_group})') # 4.25Å is ~2 water layers from the residue
     subPos = shell_waters.positions # hydration water positions
     Pos = u.select_atoms(waters).positions # all water positions
     
@@ -158,7 +175,9 @@ for i,ts in tqdm(enumerate(u.trajectory[start_frame_for_last_x_ns:])):
                 txtfile.write(f"{j}:{str(angles_list[j])}\n")
 
 ### SAVE FINAL RESULT
-if args.groupsFile and args.groupNum:
+if args.selection:
+    output_filename = f'{protein_name}_{group_name}_angles.txt'
+elif args.groupsFile and args.groupNum:
     output_filename = f'{protein_name}_group{args.groupNum}_angles.txt'
 elif args.chain != None:
     output_filename = f'{protein_name}_res{resid}_chain{segid}_angles.txt'
