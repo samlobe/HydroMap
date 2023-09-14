@@ -107,18 +107,3 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
   - Manages and submits all SLURM jobs and analysis (Steps 1-4).  
     Designed so that this single sbatch command can fully process your protein & output colored pdbs.
   - Calls *process_with_gromacs.sh*, *submit_simulation.sh*, *submit_triplets.py*, *process_angles.py*, and *analyze_groups.py*
- 
----
-
-## How to color the outputted pdbs
-
-### With ChimeraX:
-- open the outputted pdb, `select all`, and `show sel surfaces`
-- `color bfactor range 2.5,7 palette red-white-blue; color @@bfactor<-99 black` where 2.5 and 7 are the min and max values of the property (pick this based on the outputted histograms in Step 4)
-- Go to `Tools -> Depiction -> Color Key` to add a key, e.g. 2.5 kJ/mol; 7 kJ/mol.
-`2dlab text "<property_description>"` to make a label which you can drag by selecting "Move Label" in the Right Mouse tab.
-
-### With Pymol:
-- open the outputted pdb and `show surface` (or `show spheres`)
-- `spectrum b, red_white_blue, minimum=2.5, maximum=7` where 2.5 and 7 are the min and max values of the property (pick this based on the outputted histograms in Step 4)
-- `color black, b<-99` to color the unsolvated residues black
