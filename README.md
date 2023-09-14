@@ -1,7 +1,9 @@
 # protein_WaterStructure_HydrophobicityModel
 
 Use water structure analysis to color your protein based on predicted dewetting free energy (using Sam Lobo & Saeed Najafi's hydrophobicity model) and water triplet distribution principal component contributions (from Dennis Robinson and Sally Jiao's [work](https://pubs.acs.org/doi/10.1021/acs.jpcb.3c00826) modelling small hydrophobes).  
-  
+
+<img src="images/SARS2_before_vs_after.png" width="600" align="center" alt="Uncolored pdb input vs colored pdb output">
+
 This analysis takes <25 min of computation for a 100 residue protein, including ~20 min on a GPU (NVIDIA V100) and <3min on parallel CPUs (Intel Xeon Gold 6148 with 1 thread per solvated residue / custom group). This time can be reduced depending on your confidence interval tolerance.  
 
 ---
@@ -107,3 +109,24 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
   - Manages and submits all SLURM jobs and analysis (Steps 1-4).  
     Designed so that this single sbatch command can fully process your protein & output colored pdbs.
   - Calls *process_with_gromacs.sh*, *submit_simulation.sh*, *submit_triplets.py*, *process_angles.py*, and *analyze_groups.py*
+ 
+---
+
+## How to color the outputted pdbs
+
+### With ChimeraX:
+- open the outputted pdb, `select all`, and `show sel surfaces`
+- `color bfactor range 2.5,7 palette red-white-blue; color @@bfactor<-99 black` where 2.5 and 7 are the min and max values of the property (pick this based on the outputted histograms in Step 4)
+- Go to `Tools -> Depiction -> Color Key` to add a key, e.g. 2.5 kJ/mol; 7 kJ/mol.
+`2dlab text "<property_description>"` to make a label which you can drag by selecting "Move Label" in the Right Mouse tab.
+
+### With Pymol:
+- open the outputted pdb and `show surface` (or `show spheres`)
+- `spectrum b, red_white_blue, minimum=2.5, maximum=7` where 2.5 and 7 are the min and max values of the property (pick this based on the outputted histograms in Step 4)
+- `color black, b<-99` to color the unsolvated residues black
+
+## Acknowledgements:
+[Shell Lab](https://theshelllab.org) and [Shea Group](https://labs.chem.ucsb.edu/shea/joan-emma/);  
+[UCSB CNSI](https://www.cnsi.ucsb.edu/) from computing resources;  
+[Patel Group](https://patelgroup.seas.upenn.edu/) for [INDUS](https://github.com/patellab511/indus) technique used when fitting hydrophobicity model;  
+[DE Shaw Group](https://www.deshaw.com/) for [a99SB-disp](https://github.com/paulrobustelli/Force-Fields/tree/master/Gromacs_FFs) force field
