@@ -1,6 +1,6 @@
 # protein_WaterStructure_HydrophobicityModel
 
-Use water structure analysis to color your protein based on predicted dewetting free energy (using Sam Lobo & Saeed Najafi's hydrophobicity model) and water triplet distribution principal component contributions (from Dennis Robinson and Sally Jiao's work modelling small hydrophobes).  
+Use water structure analysis to color your protein based on predicted dewetting free energy (using Sam Lobo & Saeed Najafi's hydrophobicity model) and water triplet distribution principal component contributions (from Dennis Robinson and Sally Jiao's [work](https://pubs.acs.org/doi/10.1021/acs.jpcb.3c00826) modelling small hydrophobes).  
   
 This analysis takes <25 min of computation for a 100 residue protein, including ~20 min on a GPU (NVIDIA V100) and <3min on parallel CPUs (Intel Xeon Gold 6148 with 1 thread per solvated residue / custom group). This time can be reduced depending on your confidence interval tolerance.  
 
@@ -39,6 +39,7 @@ You can skip steps 1 & 2 if you already have a simulation to analyze.
 4. Fortran compiler (Step 3) - anaconda's f2py should work (see tutorial's FAQs)
 5. [MDAnalysis](https://www.mdanalysis.org/pages/installation_quick_start/) (Step 3 & 4)
 6. [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.html) or [Pymol](https://pymol.org/2/) (recommended for Step 5)  
+
 See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more install instructions.
 
 ---
@@ -59,18 +60,24 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
   - Example usage:  
     `python triplet.py <protein[_processed.gro]> <trajectory> -res <int>` to analyze one residue  
     `python triplet.py myProtein_processed.gro traj.dcd -res 10 -ch B` to analyze the resid 10 on chain B  
-    `python triplet.py myProtein_processed.gro traj.dcd --groupsFile groups_file.txt --groupNum 20` to analyze the group described by MDAnalysis selection string in the 20th line of groups_file.txt  
-    `python triplet.py protein[_processed.gro traj.dcd -res 10 --hydrationCutoff 6 --time 1` to define hydration waters as being 6 Angstroms (default is 4.25A) around resid 10's heavy atoms, and to analyze just the last 1 ns (default is 5 ns) of the trajectory   
-  - Outputs:
+    `python triplet.py myProtein_processed.gro traj.dcd --groupsFile groups_file.txt --groupNum 20` to analyze the group described by MDAnalysis selection string in the 20th line of groups_file.txt
+    `python triplet.py myProtein_processed.gro traj.dcd --selection 'resname LYS and name NZ'` to analyze the atoms selected by a custom string (using MDAnalysis selection language)  
+    `python triplet.py myProtein_processed.gro traj.dcd -res 10 --hydrationCutoff 6 --time 1` to define hydration waters as being 6 Angstroms (default is 4.25A) around resid 10's heavy atoms, and to analyze just the last 1 ns (default is 5 ns) of the trajectory   
+  - Outputs: a txt file (in 'angles' subdirectory) of water triplet angles in the hydration shell of the group you selected where each frame of the trajectory is a new line.
 - water_triplets/**process_angles.py**
   - Example usage:  
     `python process_angles.py <protein[.pdb]>`  
     `python process_angles.py myProtein.pdb --multiChain` use when your protein has multiple chains  
-    `python process_angles.py myProtein.pdb --groupsFile groups_file.txt` use when you created custom groups to analyze  
-  - Outputs:
+    `python process_angles.py myProtein.pdb --groupsFile myCustomGroups.txt` use when you created several custom groups to analyze
+    `python process_angles.py myProtein.pdb --oneAnglesFile 'myProtein_resname_LYS_and_name_NZ_angles.txt'` to process just a single group's angles
+  - Outputs: csv file ('{protein_name}_triplet_data.csv') with the group[s] triplet distributions
 - water_triplets/**analyze_groups.py**
   - Usage: `python analyze_groups.py <protein[.pdb]>`
-  - Outputs: 
+  - Outputs: 4 "colored" pdb files by property, histograms of the 4 properties, and 2D plots of each group's PCs (in parent directory)
+    - pdb files: {protein}_Fdewet_colored.pdb, {protein}_PC1_colored.pdb, {protein}_PC2_colored.pdb, {protein}_PC3_colored.pdb
+    - histogram of 4 properties: {protein}_histograms.png
+    - 2D PC plots: {protein}_PCs_2D.png
+      
 
 ## Supporting Code:
 - remove_checkpointed_duplicates.py
@@ -100,3 +107,18 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
   - Manages and submits all SLURM jobs and analysis (Steps 1-4).  
     Designed so that this single sbatch command can fully process your protein & output colored pdbs.
   - Calls *process_with_gromacs.sh*, *submit_simulation.sh*, *submit_triplets.py*, *process_angles.py*, and *analyze_groups.py*
+ 
+---
+
+## How to color the outputted pdbs
+
+### With ChimeraX:
+- open the outputted pdb, `select all`, and `show sel surfaces`
+- `color bfactor range 2.5,7 palette red-white-blue; color @@bfactor<-99 black` where 2.5 and 7 are the min and max values of the property (pick this based on the outputted histograms in Step 4)
+- Go to `Tools -> Depiction -> Color Key` to add a key, e.g. 2.5 kJ/mol; 7 kJ/mol.
+`2dlab text "<property_description>"` to make a label which you can drag by selecting "Move Label" in the Right Mouse tab.
+
+### With Pymol:
+- open the outputted pdb and `show surface` (or `show spheres`)
+- `spectrum b, red_white_blue, minimum=2.5, maximum=7` where 2.5 and 7 are the min and max values of the property (pick this based on the outputted histograms in Step 4)
+- `color black, b<-99` to color the unsolvated residues black
