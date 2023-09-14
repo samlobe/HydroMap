@@ -57,12 +57,13 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
     `python simulate_with_openmm.py myProtein_processed.gro --restrain` keep heavy atoms on protein restrained    
     `python simulate_with_openmm.py myProtein_processed.gro --restrain -ns 2`  running a 2 ns simulation (default is 5 ns)
   - Outputs: trajectory file ('traj.dcd') and log file with energies and more ('energies.log')
-  - Runs a short MD simulation with a99SB-disp force field in NPT ensemble 
+  - Runs a short MD simulation with a99SB-disp force field in NPT ensemble  
+
 - water_triplets/**triplet.py**
   - Example usage:  
     `python triplet.py <protein[_processed.gro]> <trajectory> -res <int>` to analyze one residue  
     `python triplet.py myProtein_processed.gro traj.dcd -res 10 -ch B` to analyze the resid 10 on chain B  
-    `python triplet.py myProtein_processed.gro traj.dcd --groupsFile groups_file.txt --groupNum 20` to analyze the group described by MDAnalysis selection string in the 20th line of groups_file.txt
+    `python triplet.py myProtein_processed.gro traj.dcd --groupsFile groups_file.txt --groupNum 20` to analyze the group described by MDAnalysis selection string in the 20th line of groups_file.txt  
     `python triplet.py myProtein_processed.gro traj.dcd --selection 'resname LYS and name NZ'` to analyze the atoms selected by a custom string (using MDAnalysis selection language)  
     `python triplet.py myProtein_processed.gro traj.dcd -res 10 --hydrationCutoff 6 --time 1` to define hydration waters as being 6 Angstroms (default is 4.25A) around resid 10's heavy atoms, and to analyze just the last 1 ns (default is 5 ns) of the trajectory   
   - Outputs: a txt file (in 'angles' subdirectory) of water triplet angles in the hydration shell of the group you selected where each frame of the trajectory is a new line.
@@ -70,7 +71,7 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
   - Example usage:  
     `python process_angles.py <protein[.pdb]>`  
     `python process_angles.py myProtein.pdb --multiChain` use when your protein has multiple chains  
-    `python process_angles.py myProtein.pdb --groupsFile myCustomGroups.txt` use when you created several custom groups to analyze
+    `python process_angles.py myProtein.pdb --groupsFile myCustomGroups.txt` use when you created several custom groups to analyze  
     `python process_angles.py myProtein.pdb --oneAnglesFile 'myProtein_resname_LYS_and_name_NZ_angles.txt'` to process just a single group's angles
   - Outputs: csv file ('{protein_name}_triplet_data.csv') with the group[s] triplet distributions
 - water_triplets/**analyze_groups.py**
@@ -115,15 +116,17 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
 ## How to color the outputted pdbs
 
 ### With ChimeraX:
-- open the outputted pdb, `select all`, and `show sel surfaces`
-- `color bfactor range 2.5,7 palette red-white-blue; color @@bfactor<-99 black` where 2.5 and 7 are the min and max values of the property (pick this based on the outputted histograms in Step 4)
-- Go to `Tools -> Depiction -> Color Key` to add a key, e.g. 2.5 kJ/mol; 7 kJ/mol.
+- open the outputted pdb and `show surfaces`
+  - alternatively `hide cartoons`, `show atoms`, `style sphere` if you prefer spheres
+- `color bfactor range 2.5,7 palette red-white-blue; color @@bfactor<-99 black`
+  - 2.5 and 7 are the min and max values of the property (pick this based on the outputted histograms in Step 4)
+  - colors all the "unsolvated" residues black (bfactor set to -100)
+- Go to `Tools -> Depiction -> Color Key` to add a key, e.g. 2.5 kJ/mol; 7 kJ/mol.  
 `2dlab text "<property_description>"` to make a label which you can drag by selecting "Move Label" in the Right Mouse tab.
 
 ### With Pymol:
 - open the outputted pdb and `show surface` (or `show spheres`)
-- `spectrum b, red_white_blue, minimum=2.5, maximum=7` where 2.5 and 7 are the min and max values of the property (pick this based on the outputted histograms in Step 4)
-- `color black, b<-99` to color the unsolvated residues black
+- `spectrum b, red_white_blue, minimum=2.5, maximum=7; color black, b<-99`
 
 ## Acknowledgements:
 [Shell Lab](https://theshelllab.org) and [Shea Group](https://labs.chem.ucsb.edu/shea/joan-emma/);  
