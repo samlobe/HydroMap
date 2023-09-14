@@ -73,7 +73,7 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
   - Outputs: csv file ('{protein_name}_triplet_data.csv') with the group[s] triplet distributions
 - water_triplets/**analyze_groups.py**
   - Usage: `python analyze_groups.py <protein[.pdb]>`
-  - Outputs: 4 "colored" pdb files by property, histograms of the 4 properties, and 2D plots of each group's PCs (in parent directory)
+  - Outputs: 4 "colored" pdb files by property, histograms of the 4 properties, and 2D plots of each group's PCs (all in parent directory)
     - pdb files: {protein}_Fdewet_colored.pdb, {protein}_PC1_colored.pdb, {protein}_PC2_colored.pdb, {protein}_PC3_colored.pdb
     - histogram of 4 properties: {protein}_histograms.png
     - 2D PC plots: {protein}_PCs_2D.png
