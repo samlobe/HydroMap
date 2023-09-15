@@ -1,4 +1,4 @@
-# protein_WaterStructure_HydrophobicityModel
+# protein_WaterStructure_Hydrophobicity
 
 Use water structure analysis to color your protein based on predicted dewetting free energy (using Sam Lobo & Saeed Najafi's hydrophobicity model) and water triplet distribution principal component contributions (from Dennis Robinson and Sally Jiao's [work](https://pubs.acs.org/doi/10.1021/acs.jpcb.3c00826) modelling small hydrophobes).  
 
