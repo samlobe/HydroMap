@@ -54,7 +54,9 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
 - **simulate_with_openmm.py**
   - Example usage:  
     `python simulate_with_openmm.py <protein[_processed.gro]>`   
-    `python simulate_with_openmm.py myProtein_processed.gro --restrain` keep heavy atoms on protein restrained    
+
+    `python simulate_with_openmm.py myProtein_processed.gro --restrain` keep heavy atoms on protein restrained  
+
     `python simulate_with_openmm.py myProtein_processed.gro --restrain -ns 2`  running a 2 ns simulation (default is 5 ns)
   - Outputs: trajectory file ('traj.dcd') and log file with energies and more ('energies.log')
   - Runs a short MD simulation with a99SB-disp force field in NPT ensemble  
@@ -62,16 +64,22 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
 - water_triplets/**triplet.py**
   - Example usage:  
     `python triplet.py <protein[_processed.gro]> <trajectory> -res <int>` to analyze one residue  
-    `python triplet.py myProtein_processed.gro traj.dcd -res 10 -ch B` to analyze the resid 10 on chain B  
+
+    `python triplet.py myProtein_processed.gro traj.dcd -res 10 -ch B` to analyze residue 10 on chain B  
+
     `python triplet.py myProtein_processed.gro traj.dcd --groupsFile groups_file.txt --groupNum 20` to analyze the group described by MDAnalysis selection string in the 20th line of groups_file.txt  
+
     `python triplet.py myProtein_processed.gro traj.dcd --selection 'resname LYS and name NZ'` to analyze the atoms selected by a custom string (using MDAnalysis selection language)  
+
     `python triplet.py myProtein_processed.gro traj.dcd -res 10 --hydrationCutoff 6 --time 1` to define hydration waters as being 6 Angstroms (default is 4.25A) around resid 10's heavy atoms, and to analyze just the last 1 ns (default is 5 ns) of the trajectory   
   - Outputs: a txt file (in 'angles' subdirectory) of water triplet angles in the hydration shell of the group you selected where each frame of the trajectory is a new line.
 - water_triplets/**process_angles.py**
   - Example usage:  
     `python process_angles.py <protein[.pdb]>`  
     `python process_angles.py myProtein.pdb --multiChain` use when your protein has multiple chains  
+
     `python process_angles.py myProtein.pdb --groupsFile myCustomGroups.txt` use when you created several custom groups to analyze  
+
     `python process_angles.py myProtein.pdb --oneAnglesFile 'myProtein_resname_LYS_and_name_NZ_angles.txt'` to process just a single group's angles
   - Outputs: csv file ('{protein_name}_triplet_data.csv') with the group[s] triplet distributions
 - water_triplets/**analyze_groups.py**
@@ -101,9 +109,11 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
 ## Code specifically for UCSB's Pod Cluster (SLURM scheduler):  
 - **submit_simulation.py**
   - Usage: `python submit_simulation.py <protein[_processed.gro]>`
+    - Use `-t <timeLimit>` to change the time limit in minutes allotted to the job or `-r` to restrain the protein heavy atoms (i.e. not hydrogens) in the simulation
   - Uses *simulate_with_openmm.py* to submit a GPU job (Step 2)
 - **submit_triplets.py**
   - Usage: `python submit_triplets.py <protein[.pdb]> <trajectory>`
+    - Use `--multiChain` for proteins with multiple chains or `--groupsFile <CustomGroups.txt>` if you're using custom groups. 
   - Uses *triplet.py* and srun to parallelize and submit many CPU jobs, 1 per solvated residue/group (Step 3)
 - **full_hydrophobicity_procedure.sh**
   - Usage: `sbatch full_hydrophobicity_procedure <protein_name>`
