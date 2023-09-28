@@ -1,3 +1,4 @@
+#%%
 from openmm.app import *
 from openmm import *
 from openmm.unit import *
@@ -61,11 +62,6 @@ equilibration_steps = int(equilibration_time_ps / (dt/picoseconds))
 total_simulation_time = args.nanoseconds  # ns
 steps = int(total_simulation_time * 1e3 / (dt/picoseconds))  # Convert total time to ps and divide by timestep
 
-# Setup the Simulation
-simulation = Simulation(top.topology, system, integrator, platform)
-simulation.context.setPositions(gro.positions)
-traj_name = args.output
-
 # Add restraints to heavy atoms in the protein if -r flag is set
 # HAVENT TESTED THIS YET
 if args.restrain:
@@ -78,16 +74,28 @@ if args.restrain:
 
     # Loop through all residues in the topology
     for residue in top.topology.residues():
+        # print(residue.name)
         # Check if the residue is not water or typical ion names (you can expand this list if needed)
-        if residue.name not in ["SOL","HOH", "NA","CL","Na+", "Cl-", "K+", "Mg2+", "Ca2+"]:
+        # alternatively uncomment this to instead check if residue.name is in a list of amino acid names (may not work for odd residue names)
+        # if residue.name in ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
+        #                     'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL',
+        #                     'ACE','NME','HID','HIE','HIP','LYN','ORN','CYX','CME','CYM',
+        #                     'ASH','GLH''HYP','NH2','NHE','NH3']:
+        if residue.name not in ["SOL","HOH","HO4","Na+","NA","Cl-","CL","K+","K","Mg2+","MG","Ca2+","CA","ZN","URE"]:
             # Loop through all atoms in the residue
             for atom in residue.atoms():
                 # Check if the atom is not a hydrogen
                 if atom.element.symbol != 'H':
                     force.addParticle(atom.index, gro.positions[atom.index].value_in_unit(nanometers))
+                    print(f"Adding restraint to atom: {atom.name} in residue: {residue.name}")
 
     # Add the restraining force to the system
     system.addForce(force)
+
+# Setup the Simulation
+simulation = Simulation(top.topology, system, integrator, platform)
+simulation.context.setPositions(gro.positions)
+traj_name = args.output
 
 # Load from the checkpoint if it exists
 checkpoint_file = 'checkpoint.chk'
@@ -144,3 +152,5 @@ if remove_duplicates:
     print(f'\nRemoving duplicate frames in {args.output} and duplicate entries in energies.log...')
     import subprocess
     subprocess.run(["python", "remove_checkpointed_duplicates.py",protein_file])
+
+# %%
