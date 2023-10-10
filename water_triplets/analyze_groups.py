@@ -43,6 +43,8 @@ groups_df = pd.read_csv(f'{protein_name}_triplet_data.csv',index_col=0)
 # convert triplet distribution to predicted dewetting free energy
 # using the model from fitting to single amino acids
 dewet_df = convert_triplets.singleAA_dewet_fit(groups_df,'a99SBdisp')
+# save the df
+dewet_df.to_csv(f'{protein_name}_Fdewet.csv')
 # the columns are 'FDewet (kJ/mol)' and 'MDAnalysis_selection_string'
 
 ## modelling hydrophobicity in a03ws and CHARMM36m:
@@ -59,12 +61,18 @@ dewet_df = convert_triplets.singleAA_dewet_fit(groups_df,'a99SBdisp')
 # using Robinson / Jiao's PCs from their triplet distributions
 # (they subtracted out the bulk water triplet distribution before getting PCs)
 PCs_df = convert_triplets.get_PCs(groups_df,'a99SBdisp')
+# save the df
+PCs_df.to_csv(f'{protein_name}_PCs.csv')
 ## the columns are 'PC1','PC2','PC3', and 'MDAnalysis_selection_string'
 
 ## if using other force fields:
 # PCs_df = convert_triplets.get_PCs(groups_df,'C36m')
 # PCs_df = convert_triplets.get_PCs(groups_df,'a03ws')
 # PCs_df = convert_triplets.get_PCs(groups_df,FF) # if you added the FF's bulk water distribution to to 'bulk_water_triplets.csv'
+
+#%%
+# combine the dewet_df and PCs_df into one dataframe
+# (this is just for convenience)
 
 #%%
 # function to color the protein based on a property (e.g. dewetting free energy or a PC)
@@ -87,8 +95,8 @@ def color_pdb(pdb_path, df_wProp_selecStr, property):
         for atom in u.select_atoms(selection_string):
             atom.tempfactor = np.around(df_wProp_selecStr[property][group],2)
     # save the structure
-    u.atoms.write(f'../{protein_name}_{property}_colored.pdb')
-    print(f'Outputted ../{protein_name}_{property}_colored.pdb')
+    u.atoms.write(f'{protein_name}_{property}_colored.pdb')
+    print(f'Outputted {protein_name}_{property}_colored.pdb')
     # return the MDAnalysis universe object
     return u
 
@@ -116,8 +124,8 @@ axes[1,1].set_ylabel('Number of groups',fontsize=14)
 for ax in axes.flatten():
     ax.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
 plt.tight_layout()
-plt.savefig(f'../{protein_name}_histograms.png')
-print(f'Outputted ../{protein_name}_histograms.png')
+plt.savefig(f'{protein_name}_histograms.png')
+print(f'Outputted {protein_name}_histograms.png')
 # plt.show() # uncomment if running this on your personal computer
 #%%
 # plot heatmaps of PC1 vs PC2, PC1 vs PC3, and PC2 vs PC3 in 1x3 grid
@@ -137,8 +145,8 @@ for i,res in enumerate(PCs_df.index):
     axes[1].annotate(res,(PCs_df['PC1'].iloc[i],PCs_df['PC3'].iloc[i]))
     axes[2].annotate(res,(PCs_df['PC2'].iloc[i],PCs_df['PC3'].iloc[i]))
 plt.tight_layout()
-plt.savefig(f'../{protein_name}_PCs_2D.png')
-print(f'Outputted ../{protein_name}_PCs_2D.png')
+plt.savefig(f'{protein_name}_PCs_2D.png')
+print(f'Outputted {protein_name}_PCs_2D.png')
 # plt.show() # uncomment if running this on your personal computer
 #%%
 # now you can use ChimeraX or Pymol (or nglview) to color the protein

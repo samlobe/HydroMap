@@ -97,6 +97,9 @@ def read_pdb_get_sequence(pdb_file):
             if line.startswith("ATOM"):
                 res_num = int(line[22:26].strip())
                 res_name = line[17:20].strip()
+                # throw error if res_name = 'SOL'
+                if res_name == 'SOL':
+                    raise ValueError(f"Error: one or more of your selected atoms were waters. The input should be the unprocessed pdb (i.e. just protein without water or ions)")
                 residues[res_num] = aa_mapping[res_name]
         sequence = list(residues.values())
     return ''.join(sequence)
@@ -154,7 +157,7 @@ else:
     segids = u.residues.segids # used when there are multiple chains
     total_groups = len(resids)
     groups_selection = [] # for MDAnalysis selection strings
-    for i, (resid, segid) in enumerate(tqdm(zip(resids, segids))):
+    for i, (resid, segid) in enumerate(zip(tqdm(resids), segids)):
         if args.multiChain:
             group_file = f'{script_dir}/angles/{protein_name}_res{resid}_chain{segid}_angles.txt'
             if not os.path.exists(group_file):

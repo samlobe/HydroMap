@@ -32,7 +32,7 @@ def singleAA_dewet_fit(groups_df,FF): # for a99SBdisp
     elif FF == 'a03ws':
         m1 = -0.322; m2 = 0.295; b = 8.869
     elif FF == 'C36m':
-        m1 = -0.148; m2 = 1.538; b = 3.899
+        m1 = -0.417; m2 = 1.456; b = 7.429
     else: # throw error if FF isn't one of these 3
         raise ValueError(f"Error: {FF} isn't one of the 3 force fields we tested.\nExpecting 'a99SBdisp','a03ws',or 'C36m'.\nMaybe you meant to use the function otherFF_singleAA_dewet_fit?")
 

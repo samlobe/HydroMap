@@ -63,7 +63,6 @@ total_simulation_time = args.nanoseconds  # ns
 steps = int(total_simulation_time * 1e3 / (dt/picoseconds))  # Convert total time to ps and divide by timestep
 
 # Add restraints to heavy atoms in the protein if -r flag is set
-# HAVENT TESTED THIS YET
 if args.restrain:
     # Define a force for restraining atoms
     force = CustomExternalForce("0.5*k*periodicdistance(x, y, z, x0, y0, z0)^2")
