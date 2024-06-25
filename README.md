@@ -116,7 +116,7 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
     - Use `--multiChain` for proteins with multiple chains or `--groupsFile <CustomGroups.txt>` if you're using custom groups. 
   - Uses *triplet.py* and srun to parallelize and submit many CPU jobs, 1 per solvated residue/group (Step 3)
 - **full_hydrophobicity_procedure.sh**
-  - Usage: `sbatch full_hydrophobicity_procedure <protein_name>`
+  - Usage: `sbatch full_hydrophobicity_procedure.sh <protein_name>`
   - Manages and submits all SLURM jobs and analysis (Steps 1-4).  
     Designed so that this single sbatch command can fully process your protein & output colored pdbs.
   - Calls *process_with_gromacs.sh*, *submit_simulation.sh*, *submit_triplets.py*, *process_angles.py*, and *analyze_groups.py*
