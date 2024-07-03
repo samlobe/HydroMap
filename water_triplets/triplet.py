@@ -157,7 +157,7 @@ if os.path.exists(checkpoint_filename):
 
 ### CALCULATE THE WATER TRIPLET ANGLES
 start_frame_for_last_x_ns = max(0,total_frames - frames_to_load) # ensure it's not negative
-for i,ts in tqdm(enumerate(u.trajectory[start_frame_for_last_x_ns:])):
+for i,ts in tqdm(enumerate(u.trajectory[start_frame_for_last_x_ns+start_frame:])):
     # SELECT HYDRATION WATERS
     shell_waters = u.select_atoms(f'({waters}) and around {hydrationCutoff} ({my_group})') # 4.25Å is ~2 water layers from the residue
     subPos = shell_waters.positions # hydration water positions
