@@ -1,217 +1,124 @@
-#%%
+#!/usr/bin/env python3
+
 import numpy as np
 import MDAnalysis as mda
-import water_properties as wp
 from tqdm import tqdm
-import sys
-import os
-import argparse
-import shutil
+import sys, os, argparse, shutil
 from glob import glob
+try:
+    import waterlib as wl
+except ImportError:
+    sys.exit(
+        "\nERROR: Could not import waterlib.\n"
+        "Please compile it first (from the 'water_triplets' directory):\n\n"
+        "    python setup.py build_ext --inplace\n\n"
+        "Make sure waterlib.c exists and that you are running Python in the same directory.\n"
+    )
 
-# Check for the compiled fortran code in the current directory
-matching_files = glob("waterlib*.so") + glob("waterlib*.pyd")
-if not matching_files:
-    raise FileNotFoundError("Could not find a compiled Fortran code in the current directory. (Looking for these patterns: waterlib*.so or waterlib*.pyd) \n"
-                            "Please compile the Fortran code first. Example compilation using f2py (included with anaconda):`f2py -c -m waterlib waterlib.f90`\n"
-                            "Please consult the tutorial (on GitHub) and leave an issue on the GitHub page if you have trouble compiling waterlib.f90's fortran code.\n")
 
-# Setting up argparse
-parser = argparse.ArgumentParser(description='Compile water triplet angles around the residue/custom group in your protein.\nExample usage: `python triplet.py ../myProtein_processed.gro ../traj.dcd -res 42`')
-
-# Add arguments
-parser.add_argument('protein',type=str,help="Processed protein structure file (e.g. '../myProtein_processed.gro')")
-parser.add_argument('trajectory', type=str, help="Trajectory file name (e.g. '../traj.dcd')")
-parser.add_argument('-res', '--resid', type=int, help='resid argument')
-parser.add_argument('-ch', '--chain', help='segid (i.e. chainID) argument')
-parser.add_argument('-t', '--time', type=float, default=5.0, help='Last x ns. Default is 5 ns.')
-parser.add_argument('--groupsFile', type=str, help='File containing MDAnalysis selection strings, one per line.')
-parser.add_argument('--groupNum', type=int, help='Line number in groupFile to use as the selection string.')
-parser.add_argument('--selection', type=str, help='MDAnalysis selection string for your custom atom group.')
-parser.add_argument('--hydrationCutoff', type=float, default=4.25, help='Cutoff distance (in Å) to define the hydration waters. Default is 4.25 Å.)')
-parser.add_argument('--hydrationLowCutoff', type=float, default=None, help='Lower bound for hydration cutoff distance (in Å).')
-
+parser = argparse.ArgumentParser(
+    description=("Compile water triplet angles around the residue/"
+                 "custom group in your protein.\n"
+                 "Example: python triplet.py protein.gro traj.dcd -res 42"))
+parser.add_argument('protein')
+parser.add_argument('trajectory')
+parser.add_argument('-res','--resid', type=int)
+parser.add_argument('-ch','--chain')
+parser.add_argument('-t','--time',   type=float, default=5.0,
+                    help='Last x ns to analyse (default 5)')
+parser.add_argument('--groupsFile')
+parser.add_argument('--groupNum', type=int)
+parser.add_argument('--selection')
+parser.add_argument('--hydrationCutoff', type=float, default=4.25)
+parser.add_argument('--hydrationLowCutoff', type=float, default=None)
 args = parser.parse_args()
 
-# Assign the arguments
-protein_processed = args.protein
-resid = args.resid
-segid = args.chain
-last_x_ns = args.time
-hydrationCutoff = args.hydrationCutoff
-hydrationLowCutoff = args.hydrationLowCutoff
-
-# Ensure that the protein file ends with '.gro'
-if not protein_processed.endswith('.gro'):
-    protein_processed += '.gro'
-
-# Ensure that the protein file exists
+# some checks
+protein_processed = args.protein if args.protein.endswith('.gro') else args.protein+'.gro'
 if not os.path.exists(protein_processed):
-    print(f"Error: Can't find {protein_processed}")
-    sys.exit(1)
-
-# Ensure that the trajectory file exists
+    sys.exit(f"Error: cannot find {protein_processed}")
 if not os.path.exists(args.trajectory):
-    print(f"Error: Can't find {args.trajectory}")
-    sys.exit(1)
+    sys.exit(f"Error: cannot find {args.trajectory}")
 
-structure_path = protein_processed  # Looking at structure file (usually in parent directory)
-traj_path = args.trajectory
+protein_name = os.path.splitext(os.path.basename(protein_processed))[0].replace('_processed','')
 
-# Get the protein name from the protein file name
-if protein_processed.endswith('_processed.gro'):
-    protein_name = protein_processed[:-14] # excluding the '_processed.gro' part
-else:
-    protein_name = protein_processed[:-4] # excluding the '.gro' part
-
-# check if the protein name has '/' in it (e.g. '../myProtein')
-# if so read the part after the last '/' (e.g. 'myProtein')
-if '/' in protein_name:
-    protein_name = protein_name.split('/')[-1]
-
-### SELECT YOUR GROUP OF INTEREST WITH MDANALYSIS SELECTION LANGUAGE \
 if args.selection:
-    my_group = args.selection
+    group_string = args.selection.replace(" ","_")
+    out_base = f'{protein_name}_{group_string}'
+elif args.groupsFile and args.groupNum:
+    out_base = f'{protein_name}_group{args.groupNum}'
+elif args.chain:
+    out_base = f'{protein_name}_res{args.resid}_chain{args.chain}'
+else:
+    out_base = f'{protein_name}_res{args.resid}'
+
+if args.hydrationLowCutoff is not None:
+    out_base += f'_lowC_{args.hydrationLowCutoff}_highC_{args.hydrationCutoff}'
+
+angles_dir   = 'angles'
+os.makedirs(angles_dir, exist_ok=True)
+output_path  = os.path.join(angles_dir, out_base+'_angles.txt')
+
+# reading trajectory
+u = mda.Universe(protein_processed, args.trajectory) 
+total_frames   = len(u.trajectory)
+frame_dt_ps    = u.trajectory.dt
+frames_to_load = int((args.time*1e3)/frame_dt_ps)
+first_idx      = max(0, total_frames - frames_to_load)
+
+# MDAnalysis atom selection
+if args.selection:
+    sel = args.selection
 elif args.groupsFile and args.groupNum is not None:
-    # Load selection strings from the provided file
-    try:
-        with open(args.groupsFile, 'r') as f:
-            group_strings = f.readlines()
-        my_group = group_strings[args.groupNum - 1].strip()  # 1-based index for user-friendliness
-    except (IndexError, FileNotFoundError, IOError) as e:
-        print(f"Error loading custom groups' selection strings from file: {e}")
-        sys.exit(1)
+    with open(args.groupsFile) as fh:
+        sel = fh.readlines()[args.groupNum-1].strip()
 elif args.resid is not None:
-    if args.chain is not None:  # If a chain was provided
-        my_group = f'resid {resid} and segid {segid} and not name H*'  # selecting heavy atoms
-    else:  # No chain provided
-        my_group = f'resid {resid} and not name H*'  # selecting heavy atoms without chain
+    sel = (f'resid {args.resid} and segid {args.chain} and not name H*'
+           if args.chain else f'resid {args.resid} and not name H*')
 else:
-    print("Error: Please either provide the -res (and -ch flags) OR the --groupFile and --groupNum flags OR a MDAnalysis selection string in --selection.")
-    sys.exit(1)
+    sys.exit("Error: must specify -res/-ch, --groupsFile/--groupNum, or --selection")
 
-### LOAD THE MD TRAJECTORY
-u = mda.Universe(structure_path,traj_path)
-total_frames = len(u.trajectory)
-timestep = u.trajectory.dt
-# convert ns to ps and then divide by timestep to get number of frames
-frames_to_load = int((last_x_ns * 1e3) / timestep)
+# test selection
+if len(u.select_atoms(sel)) == 0:
+    sys.exit("Your atom selection picked zero atoms – please check.")
 
-### ERROR CHECKING YOUR SELECTION
-try:
-    res_group = u.select_atoms(my_group)
-    if len(res_group) == 0:
-        raise ValueError
-except ValueError:
-    print(f"No atoms were selected. Please check your selection criteria.")
-    sys.exit(1)
+waters_sel = 'resname SOL and name O*'
+BoxDims    = u.dimensions[:3]
+lowCut     = 0.0
+highCut    = 3.5
 
-# throw an error if the user selected any atoms that are waters
-resnames = [atom.resname for atom in u.select_atoms(my_group)]
-if 'SOL' in resnames:
-    print(f"Error: one or more of your selected atoms were waters.")
-    print("You probably meant to select protein atoms. Please check your selection criteria.")
-    sys.exit(1)
+# checkpointing
+done_lines = 0
+if os.path.exists(output_path):
+    with open(output_path) as fh:
+        for done_lines,_ in enumerate(fh,1):
+            pass
+    print(f"Resuming – {done_lines} frames already present in {output_path}")
 
-resname = resnames[0] # get the residue name from the first atoms (assuming all atoms are from the same residue)
-print(f'Looking at {len(res_group)} atoms from this residue:')
-res = res_group[0].resname;  resid = res_group[0].resid
-print(f'   {res}{resid}')
+traj_slice = u.trajectory[first_idx+done_lines:]
+with open(output_path, 'a') as out_f:
+    for i, ts in tqdm(enumerate(traj_slice, start=done_lines),
+                      total=frames_to_load-done_lines, unit='frame'):
 
-# Continue setting up analysis
-waters = 'resname SOL and name O*' # looking at just water oxygens
-BoxDims = u.dimensions[:3] # Å; needed for periodic boundary conditions
-lowCut = 0
-highCut = 3.5 # Å; cutoff distance to establish the neighbors of each hydration water
+        # hydration‑water selection
+        if args.hydrationLowCutoff:
+            shell = u.select_atoms(
+                f'({waters_sel}) and around {args.hydrationCutoff} ({sel}) '
+                f'and not around {args.hydrationLowCutoff} ({sel})')
+        else:
+            shell = u.select_atoms(
+                f'({waters_sel}) and around {args.hydrationCutoff} ({sel})')
 
-# Create a list of lists of 3-body angles.
-# One sublist per configuration (i.e. per frame of trajectory)
-# Each sublist contains the 3-body angle for the waters in the first shell around your group of interest.
-angles_list = [[] for i in range(len(u.trajectory))]
+        # compute triplet angles (using C-implementation from waterlib)
+        ang_np, _ = wl.triplet_angles(shell.positions,
+                                      u.select_atoms(waters_sel).positions,
+                                      BoxDims, lowCut, highCut)
 
-# if using --selection, come up with an apppropriate name for the output files
-if args.selection:
-    group_name = my_group.replace(" ","_")
+        # write immediately
+        out_f.write(" ".join(f"{a:.1f}" for a in ang_np) + "\n")
 
-# Create a checkpoint file to save progress (every 1000 frames)
-if args.selection:
-    checkpoint_filename = f'checkpoint_{protein_name}_selection_{group_name}_angles.txt'
-elif args.groupsFile and args.groupNum:
-    checkpoint_filename = f'checkpoint{protein_name}_group{args.groupNum}_angles.txt'
-elif args.chain is not None:
-    checkpoint_filename = f'checkpoint_{protein_name}_res{resid}_chain{segid}_angles.txt'
-else:
-    checkpoint_filename = f'checkpoint_{protein_name}_res{resid}_angles.txt'
+        # flush every 500 frames
+        if i % 500 == 0:
+            out_f.flush()
 
-
-# Load from checkpoint if exists
-start_frame = 0
-if os.path.exists(checkpoint_filename):
-    with open(checkpoint_filename, 'r') as file:
-        for line in file:
-            frame, angles = line.split(":")
-            angles_str = angles.strip()[1:-1]
-            if angles_str:
-                angles = [float(angle) for angle in angles_str.split(',')]
-            else: angles = []
-            angles_list[int(frame)] = angles
-        start_frame = int(frame) + 1
-
-### CALCULATE THE WATER TRIPLET ANGLES
-start_frame_for_last_x_ns = max(0,total_frames - frames_to_load) # ensure it's not negative
-for i,ts in tqdm(enumerate(u.trajectory[start_frame_for_last_x_ns+start_frame:])):
-    # SELECT HYDRATION WATERS
-    if hydrationLowCutoff is not None:
-        shell_waters = u.select_atoms(f'({waters}) and around {hydrationCutoff} ({my_group}) and not around {hydrationLowCutoff} ({my_group})')
-    else:
-        shell_waters = u.select_atoms(f'({waters}) and around {hydrationCutoff} ({my_group})') # 4.25Å is ~2 water layers from the residue
-    subPos = shell_waters.positions # hydration water positions
-    Pos = u.select_atoms(waters).positions # all water positions
-    
-    # MEAUSURE TRIPLET ANGLES
-    triplet_angs, _ = wp.getTripletAngs(subPos,Pos,BoxDims,lowCut,highCut)
-    #print(three_body_angs) # for debugging
-    angles_list[i+start_frame] = list(np.around(triplet_angs,1))
-    
-    # Save checkpoint every 1000 frames
-    if (i+1) % 1000 == 0:
-        with open(checkpoint_filename, 'w') as txtfile:
-            for j in range(i+start_frame+1):
-                txtfile.write(f"{j}:{str(angles_list[j])}\n")
-
-### SAVE FINAL RESULT
-if args.selection:
-    output_filename = f'{protein_name}_{group_name}_angles.txt'
-elif args.groupsFile and args.groupNum:
-    output_filename = f'{protein_name}_group{args.groupNum}_angles.txt'
-elif args.chain != None:
-    output_filename = f'{protein_name}_res{resid}_chain{segid}_angles.txt'
-else:
-    output_filename = f'{protein_name}_res{resid}_angles.txt'
-
-if hydrationLowCutoff is not None:
-    hydration_str = f'_lowC_{hydrationLowCutoff}_highC_{hydrationCutoff}'
-    output_filename = output_filename[:-4] + hydration_str + '.txt'
-
-
-with open(output_filename,'w') as txtfile:
-    # each line contains the 3-body angles for one configuration (i.e. frame of trajectory)
-    # in each line, there are triplet angles for each of the hydration waters
-    for line in angles_list:
-        txtfile.write(str(line)[1:-1].replace(",","").replace("\n","  ")+'\n') # string formatting
-
-# Delete checkpoint file
-if os.path.exists(checkpoint_filename):
-    os.remove(checkpoint_filename)
-
-# create directory 'angles' if it doesn't exist
-if not os.path.exists('angles'):
-    try:
-        os.makedirs('angles')
-    except FileExistsError:
-        pass
-
-# move output file to angles
-shutil.move(output_filename,f'angles/{output_filename}')
-
-# %%
+print(f"Done! Angles in {output_path}")
