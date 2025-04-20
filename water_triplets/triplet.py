@@ -29,6 +29,7 @@ parser.add_argument('--groupsFile', type=str, help='File containing MDAnalysis s
 parser.add_argument('--groupNum', type=int, help='Line number in groupFile to use as the selection string.')
 parser.add_argument('--selection', type=str, help='MDAnalysis selection string for your custom atom group.')
 parser.add_argument('--hydrationCutoff', type=float, default=4.25, help='Cutoff distance (in Å) to define the hydration waters. Default is 4.25 Å.)')
+parser.add_argument('--hydrationLowCutoff', type=float, default=None, help='Lower bound for hydration cutoff distance (in Å).')
 
 args = parser.parse_args()
 
@@ -38,6 +39,7 @@ resid = args.resid
 segid = args.chain
 last_x_ns = args.time
 hydrationCutoff = args.hydrationCutoff
+hydrationLowCutoff = args.hydrationLowCutoff
 
 # Ensure that the protein file ends with '.gro'
 if not protein_processed.endswith('.gro'):
@@ -159,7 +161,10 @@ if os.path.exists(checkpoint_filename):
 start_frame_for_last_x_ns = max(0,total_frames - frames_to_load) # ensure it's not negative
 for i,ts in tqdm(enumerate(u.trajectory[start_frame_for_last_x_ns+start_frame:])):
     # SELECT HYDRATION WATERS
-    shell_waters = u.select_atoms(f'({waters}) and around {hydrationCutoff} ({my_group})') # 4.25Å is ~2 water layers from the residue
+    if hydrationLowCutoff is not None:
+        shell_waters = u.select_atoms(f'({waters}) and around {hydrationCutoff} ({my_group}) and not around {hydrationLowCutoff} ({my_group})')
+    else:
+        shell_waters = u.select_atoms(f'({waters}) and around {hydrationCutoff} ({my_group})') # 4.25Å is ~2 water layers from the residue
     subPos = shell_waters.positions # hydration water positions
     Pos = u.select_atoms(waters).positions # all water positions
     
@@ -183,6 +188,11 @@ elif args.chain != None:
     output_filename = f'{protein_name}_res{resid}_chain{segid}_angles.txt'
 else:
     output_filename = f'{protein_name}_res{resid}_angles.txt'
+
+if hydrationLowCutoff is not None:
+    hydration_str = f'_lowC_{hydrationLowCutoff}_highC_{hydrationCutoff}'
+    output_filename = output_filename[:-4] + hydration_str + '.txt'
+
 
 with open(output_filename,'w') as txtfile:
     # each line contains the 3-body angles for one configuration (i.e. frame of trajectory)

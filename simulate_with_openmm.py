@@ -10,8 +10,11 @@ parser = argparse.ArgumentParser(description='Run a NPT simulation from a proces
 parser.add_argument('protein', help='Name of the processed protein structure file (.gro) for the simulation job, e.g. myProtein_processed[.gro]')
 parser.add_argument('-ns','--nanoseconds',default=5,type=float,help='Time in ns you wish to simulate.')
 parser.add_argument('-r','--restrain',action='store_true',help='Restrain heavy atoms of protein.')
+parser.add_argument('--random_seed',default=42,type=int,help='Random seed for the simulation.')
 parser.add_argument('-o','--output',default='traj.dcd',type=str,help='Output trajectory file name (.dcd)')
 args = parser.parse_args()
+
+# example usage: python simulate_with_openmm.py myProtein_processed -ns 5 -r -o traj.dcd
 
 # Read the processed protein structure file (i.e. solvated and neutralized)
 protein_file = args.protein
@@ -45,6 +48,7 @@ system.addForce(MonteCarloBarostat(pressure, temperature, barostatInterval))
 dt = 0.004*picoseconds  # 4 fs timestep
 friction = 2/picosecond
 integrator = LangevinMiddleIntegrator(temperature, friction, dt)
+integrator.setRandomNumberSeed(args.random_seed)
 
 # Setup Platform for GPU
 platform = Platform.getPlatformByName('CUDA')

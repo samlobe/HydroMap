@@ -15,6 +15,7 @@ parser.add_argument('protein', help="unprocessed protein file ( e.g. <protein>[.
 parser.add_argument('--multiChain', action='store_true', help="protein has multiple chains")
 parser.add_argument('--groupsFile', type=str, help='to reference a file containing your custom groups (i.e. MDAnalysis selection strings, one group per line).')
 parser.add_argument('--oneAnglesFile', type=str, help='to process data from one angles file (e.g. angles/<protein>_<selection>_angles.txt)')
+parser.add_argument('-o','--outputFile', type=str, help="Specify a custom name for the output CSV file")
 
 # Read arguments
 args = parser.parse_args()
@@ -189,7 +190,8 @@ groups_data = np.hstack((np.array(group_distros), avg_num_angles_list, groups_se
 columns_after_bin_mids = np.array(['avg_residue_angles', 'MDAnalysis_selection_strings'])
 columns = np.append(bin_mids,columns_after_bin_mids)
 groups_df = pd.DataFrame(data=groups_data, index=group_names, columns=columns)
-groups_df.to_csv(f'{protein_name}_triplet_data.csv')
-print(f'Successfully processed angles and outputted {protein_name}_triplet_data.csv')
+output_filename = args.outputFile if args.outputFile else f'{protein_name}_triplet_data.csv'
+groups_df.to_csv(output_filename)
+print(f'Successfully processed angles and outputted {output_filename}')
 
 #%%
