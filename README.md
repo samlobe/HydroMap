@@ -33,32 +33,33 @@ You can skip steps 1 & 2 if you already have a simulation to analyze.
 ## Installation:
 
 1. Create and activate a new conda environment:
-```bash
-conda create -n hydrophobicity python=3.9
-conda activate hydrophobicity
-```
-2. Install required dependencies
-```bash
-conda install -c conda-forge openmm
-conda install mdanalysis
-```
-You may need to install OpenMM with cuda support catered to your machine, e.g. `conda install -c conda-forge openmm cudatoolkit=11.2`  
+    ```bash
+    conda create -n hydrophobicity python=3.9
+    conda activate hydrophobicity
+    ```
+2. Install required dependencies:
+    ```bash
+    conda install -c conda-forge openmm
+    conda install mdanalysis
+    ```
+   
+    You may need to install OpenMM with cuda support catered to your machine, e.g. `conda install -c conda-forge openmm cudatoolkit=11.2`  
 
-3. GROMACS installation (used to preprocess files for OpenMM simulation)  
-You simply need the `gmx` command accessible in your environment. 
-For official installation instructions, refer to the [GROMACS installation guide](https://manual.gromacs.org/current/install-guide/index.html).
+3. GROMACS installation (used to preprocess files for OpenMM simulation):  
+You simply need the `gmx` command accessible in your environment.  
+For official installation instructions, refer to the [GROMACS installation guide](https://manual.gromacs.org/current/install-guide/index.html).  
 You may be able to install via conda:
-```bash
-conda install gromacs
-```
-4. Compile the water triplet analysis library
+    ```bash
+    conda install gromacs
+    ```
+4. Compile the water triplet analysis library:  
 From the `water_triplets` subdirectory, run:
-```bash
-python setup.py build_ext --inplace
-```
-Test compilation after compiling with: `python test_waterlib_compilation.py`
+    ```bash
+    python setup.py build_ext --inplace
+    ```
+    Test compilation after compiling with: `python test_waterlib_compilation.py`
 
-5. Molecular Visualization 
+5. Molecular Visualization setup:  
 We recommend installing [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.html) or [Pymol](https://pymol.org/) to visualize the dewetting free energy prediction or water structure of your protein.
 
 ---
@@ -70,36 +71,36 @@ We recommend installing [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.ht
   - Uses basic GROMACS commands. Uses a99SB-disp force field with TIP4P-D water.
 - **simulate_with_openmm.py**
   - Example usage:  
-    `python simulate_with_openmm.py <protein[_processed.gro]>`   
+      - `python simulate_with_openmm.py <protein[_processed.gro]>`   
 
-    `python simulate_with_openmm.py myProtein_processed.gro --restrain` keep heavy atoms on protein restrained  
+      - `python simulate_with_openmm.py myProtein_processed.gro --restrain` to keep heavy atoms on protein restrained  
 
-    `python simulate_with_openmm.py myProtein_processed.gro --restrain -ns 2`  running a 2 ns simulation (default is 5 ns)
-  - Outputs: trajectory file ('traj.dcd') and log file with energies and more ('energies.log')
+      - `python simulate_with_openmm.py myProtein_processed.gro --restrain -ns 2`  to run a 2 ns simulation (default is 5 ns)
+  - Outputs: trajectory file ('traj.dcd') and log file with energies and other properties ('energies.log')
   - Runs a short MD simulation with a99SB-disp force field in NPT ensemble  
 - water_triplets/**triplet.py**
   - Example usage:  
-    `python triplet.py <protein[_processed.gro]> <trajectory> -res <int>` to analyze one residue  
+      - `python triplet.py <protein[_processed.gro]> <trajectory> -res <int>` to analyze one residue  
 
-    `python triplet.py myProtein_processed.gro traj.dcd -res 10 -ch B` to analyze residue 10 on chain B  
+      - `python triplet.py myProtein_processed.gro traj.dcd -res 10 -ch B` to analyze residue 10 on chain B  
 
-    `python triplet.py myProtein_processed.gro traj.dcd --groupsFile groups_file.txt --groupNum 20` to analyze the group described by MDAnalysis selection string in the 20th line of groups_file.txt  
+      - `python triplet.py myProtein_processed.gro traj.dcd --groupsFile groups_file.txt --groupNum 20` to analyze the group described by MDAnalysis selection string in the 20th line of groups_file.txt  
 
-    `python triplet.py myProtein_processed.gro traj.dcd --selection 'resname LYS and name NZ'` to analyze the atoms selected by a custom string (using MDAnalysis selection language)  
+      - `python triplet.py myProtein_processed.gro traj.dcd --selection 'resname LYS and name NZ'` to analyze the atoms selected by a custom string (using MDAnalysis selection language)  
 
-    `python triplet.py myProtein_processed.gro traj.dcd -res 10 --hydrationCutoff 6 --time 1` to define hydration waters as being 6 Angstroms (default is 4.25A) around resid 10's heavy atoms, and to analyze just the last 1 ns (default is 5 ns) of the trajectory   
+      - `python triplet.py myProtein_processed.gro traj.dcd -res 10 --hydrationCutoff 6 --time 1` to define hydration waters as being 6 Angstroms (default is 4.25A) around resid 10's heavy atoms, and to analyze just the last 1 ns (default is 5 ns) of the trajectory   
   - Outputs: a txt file (in 'angles' subdirectory) of water triplet angles in the hydration shell of the group you selected where each frame of the trajectory is a new line.
 - water_triplets/**run_triplets_parallel.py**
   - Usage: `python run_triplets_parallel.py <protein[.pdb]> --nprocs 8`
   - Parallelizes `python triple.py` calls across multiple CPU processors; defaults to one call per residue.
 - water_triplets/**process_angles.py**
   - Example usage:  
-    `python process_angles.py <protein[.pdb]>`  
-    `python process_angles.py myProtein.pdb --multiChain` use when your protein has multiple chains  
+    - `python process_angles.py <protein[.pdb]>`  
+    - `python process_angles.py myProtein.pdb --multiChain` use when your protein has multiple chains  
 
-    `python process_angles.py myProtein.pdb --groupsFile myCustomGroups.txt` use when you created several custom groups to analyze  
+    - `python process_angles.py myProtein.pdb --groupsFile myCustomGroups.txt` use when you created several custom groups to analyze  
 
-    `python process_angles.py myProtein.pdb --oneAnglesFile 'myProtein_resname_LYS_and_name_NZ_angles.txt'` to process just a single group's angles
+    - `python process_angles.py myProtein.pdb --oneAnglesFile 'myProtein_resname_LYS_and_name_NZ_angles.txt'` to process just a single group's angles
   - Outputs: csv file ('{protein_name}_triplet_data.csv') with the group[s] triplet distributions
 - water_triplets/**analyze_groups.py**
   - Usage: `python analyze_groups.py <protein[.pdb]>`
@@ -112,10 +113,8 @@ We recommend installing [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.ht
 ## Supporting Code:
 - remove_checkpointed_duplicates.py
   - Called by simulate_with_openmm.py when a simulation is restarted from a checkpoint in order to clean up duplicate frames.
-- water_triplets/water_properties.py
-  - Called by triplet.py to measure water angles
-- water_triplets/waterlib.f90
-  - Called by water_properties.py to efficiently measure water angles
+- water_triplets/waterlib.c
+  - Called by triplet.py to efficiently measure water angles
 - water_triplets/convert_triplets.py
   - Called by analyze_groups.py to convert water triplet distributions to dewetting free energy predictions and principal component contributions.
 - water_triplets/principalComps.csv
