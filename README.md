@@ -4,7 +4,7 @@ Use water structure analysis to color your protein based on predicted dewetting 
 
 <img src="images/SARS2_before_vs_after.png" width="600" align="center" alt="Uncolored pdb input vs colored pdb output">
 
-This analysis takes <20 min of computation for a 100 residue protein, including ~15 min on a GPU (NVIDIA RTX 3090 Ti) and <2min on parallel CPUs (Intel Xeon Gold 6148 with 1 thread per solvated residue / custom group). This time can be reduced depending on your confidence interval tolerance.  
+This analysis takes <20 min of computation for a 100 residue protein, including ~15 min on a GPU (NVIDIA RTX 3090 Ti) and ~2min on 24 CPU processors (Intel CoreTM i9-14900K with 1 thread per solvated residue / custom group). This time can be reduced depending on your confidence interval tolerance.  
 
 ---
 
