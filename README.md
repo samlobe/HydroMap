@@ -39,10 +39,8 @@ You can skip steps 1 & 2 if you already have a simulation to analyze.
     ```
 2. Install required dependencies:
     ```bash
-    conda install -c conda-forge openmm
-    conda install mdanalysis
+    conda install -c conda-forge openmm mdanalysis
     ```
-   
     You may need to install OpenMM with cuda support catered to your machine, e.g. `conda install -c conda-forge openmm cudatoolkit=11.2`  
 
 3. GROMACS installation (used to preprocess files for OpenMM simulation):  
