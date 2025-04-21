@@ -4,7 +4,7 @@ Use water structure analysis to color your protein based on predicted dewetting 
 
 <img src="images/SARS2_before_vs_after.png" width="600" align="center" alt="Uncolored pdb input vs colored pdb output">
 
-This analysis takes <25 min of computation for a 100 residue protein, including ~20 min on a GPU (NVIDIA V100) and <3min on parallel CPUs (Intel Xeon Gold 6148 with 1 thread per solvated residue / custom group). This time can be reduced depending on your confidence interval tolerance.  
+This analysis takes <20 min of computation for a 100 residue protein, including ~15 min on a GPU (NVIDIA RTX 3090 Ti) and <2min on parallel CPUs (Intel Xeon Gold 6148 with 1 thread per solvated residue / custom group). This time can be reduced depending on your confidence interval tolerance.  
 
 ---
 
@@ -15,9 +15,6 @@ This analysis takes <25 min of computation for a 100 residue protein, including 
 - pdb file with dewetting free energy predictions of each residue (or custom group) listed in the tempfactor column
 - 3 pdb files with the 3 principal component contributions of each residue (or custom group) listed in the tempfactor column
 - csv file with triplet distribution for each residue (or custom group), histograms and plots of dewetting free energy predictions & principal componenet contributions, and many txt files of raw data triplet angles  
-
-### **Tutorial:**
-[Click here](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for the complete tutorial on Sam Lobo's Roam page which includes detailed install instructions, the commands necessary for each step in the procedure, some background info, and FAQs (e.g. "How can I get this working on my cluster?").
 
 ---
 
@@ -33,16 +30,36 @@ You can skip steps 1 & 2 if you already have a simulation to analyze.
 
 ---
 
-## Install requirements:
+## Installation:
 
-1. [Anaconda](https://www.anaconda.com/download) or miniconda for python tools
-2. [GROMACS](https://manual.gromacs.org/documentation/current/install-guide/index.html) (Step 1)
-3. [OpenMM](http://docs.openmm.org/latest/userguide/application/01_getting_started.html#installing-openmm) (Step 2) - you need to fix for TIP4P water constraints and you may need to install CUDA drivers depending on your architecture
-4. Fortran compiler (Step 3) - anaconda's f2py should work (see tutorial's FAQs)
-5. [MDAnalysis](https://www.mdanalysis.org/pages/installation_quick_start/) (Step 3 & 4)
-6. [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.html) or [Pymol](https://pymol.org/2/) (recommended for Step 5)  
+1. Create and activate a new conda environment:
+```bash
+conda create -n hydrophobicity python=3.9
+conda activate hydrophobicity
+```
+2. Install required dependencies
+```bash
+conda install -c conda-forge openmm
+conda install mdanalysis
+```
+You may need to install OpenMM with cuda support catered to your machine, e.g. `conda install -c conda-forge openmm cudatoolkit=11.2`  
 
-See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more install instructions.
+3. GROMACS installation (used to preprocess files for OpenMM simulation)  
+You simply need the `gmx` command accessible in your environment. 
+For official installation instructions, refer to the [GROMACS installation guide](https://manual.gromacs.org/current/install-guide/index.html).
+You may be able to install via conda:
+```bash
+conda install gromacs
+```
+4. Compile the water triplet analysis library
+From the `water_triplets` subdirectory, run:
+```bash
+python setup.py build_ext --inplace
+```
+Test compilation after compiling with: `python test_waterlib_compilation.py`
+
+5. Molecular Visualization 
+We recommend installing [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.html) or [Pymol](https://pymol.org/) to visualize the dewetting free energy prediction or water structure of your protein.
 
 ---
 
@@ -60,7 +77,6 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
     `python simulate_with_openmm.py myProtein_processed.gro --restrain -ns 2`  running a 2 ns simulation (default is 5 ns)
   - Outputs: trajectory file ('traj.dcd') and log file with energies and more ('energies.log')
   - Runs a short MD simulation with a99SB-disp force field in NPT ensemble  
-
 - water_triplets/**triplet.py**
   - Example usage:  
     `python triplet.py <protein[_processed.gro]> <trajectory> -res <int>` to analyze one residue  
@@ -73,6 +89,9 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
 
     `python triplet.py myProtein_processed.gro traj.dcd -res 10 --hydrationCutoff 6 --time 1` to define hydration waters as being 6 Angstroms (default is 4.25A) around resid 10's heavy atoms, and to analyze just the last 1 ns (default is 5 ns) of the trajectory   
   - Outputs: a txt file (in 'angles' subdirectory) of water triplet angles in the hydration shell of the group you selected where each frame of the trajectory is a new line.
+- water_triplets/**run_triplets_parallel.py**
+  - Usage: `python run_triplets_parallel.py <protein[.pdb]> --nprocs 8`
+  - Parallelizes `python triple.py` calls across multiple CPU processors; defaults to one call per residue.
 - water_triplets/**process_angles.py**
   - Example usage:  
     `python process_angles.py <protein[.pdb]>`  
@@ -104,23 +123,6 @@ See [tutorial](https://roamresearch.com/#/app/SamLobo/page/P2_MRPX_6) for more i
 - water_triplets/bulk_water_triplets.csv
   - Read by convert_triplets.py
     
----
-
-## Code specifically for UCSB's Pod Cluster (SLURM scheduler):  
-- **submit_simulation.py**
-  - Usage: `python submit_simulation.py <protein[_processed.gro]>`
-    - Use `-t <timeLimit>` to change the time limit in minutes allotted to the job or `-r` to restrain the protein heavy atoms (i.e. not hydrogens) in the simulation
-  - Uses *simulate_with_openmm.py* to submit a GPU job (Step 2)
-- **submit_triplets.py**
-  - Usage: `python submit_triplets.py <protein[.pdb]> <trajectory>`
-    - Use `--multiChain` for proteins with multiple chains or `--groupsFile <CustomGroups.txt>` if you're using custom groups. 
-  - Uses *triplet.py* and srun to parallelize and submit many CPU jobs, 1 per solvated residue/group (Step 3)
-- **full_hydrophobicity_procedure.sh**
-  - Usage: `sbatch full_hydrophobicity_procedure.sh <protein_name>`
-  - Manages and submits all SLURM jobs and analysis (Steps 1-4).  
-    Designed so that this single sbatch command can fully process your protein & output colored pdbs.
-  - Calls *process_with_gromacs.sh*, *submit_simulation.sh*, *submit_triplets.py*, *process_angles.py*, and *analyze_groups.py*
- 
 ---
 
 ## How to color the outputted pdbs
