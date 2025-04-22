@@ -44,6 +44,7 @@ run_gmx_command() {
 }
 
 echo "Processing with GROMACS..."
+echo "(writing progress/errors to gromacs_processing.log)"
 
 # pdb2gmx
 run_gmx_command "echo -e \"1\n1\" | gmx pdb2gmx -f ${protein}.pdb -o ${protein}_noSolvent.gro -ignh" \
@@ -67,9 +68,15 @@ run_gmx_command "gmx grompp -f ions.mdp -c ${protein}_solv.gro -p topol.top -o i
 run_gmx_command "echo 13 | gmx genion -s ions.tpr -o ${protein}_processed.gro -p topol.top -pname NA -nname CL -neutral" \
     "Now we add in the ions... Selecting SOL to replace the SOL (i.e. water) atoms with ions."
 
+# convert from .gro back to .pdb
+run_gmx_command "gmx grompp -f ions.mdp -c ${protein}_processed.gro -p topol.top -o ${protein}_processed.tpr" \
+    "Getting a .tpr file so we can convert the processed file from .gro back to .pdb..."
+run_gmx_command "echo 0 | gmx trjconv -f ${protein}_processed.gro -s ${protein}_processed.tpr -o ${protein}_processed.pdb" \
+    "Converting the processed .gro file back to .pdb format..."
+
 echo "Cleaning up files..."
-rm ${protein}_newbox.gro ${protein}_noSolvent.gro ${protein}_solv.gro posre*.itp mdout.mdp ions.tpr 
+rm ${protein}_newbox.gro ${protein}_noSolvent.gro ${protein}_solv.gro posre*.itp mdout.mdp ions.tpr ${protein}_processed.tpr ${protein}_processed.gro
 find . -maxdepth 1 -type f -name "#*" -exec rm -f {} \;
 
-echo -e "\nDone processing with GROMACS. Use ${protein}_processed.gro and topol.top for the simulation.\n"
-
+echo -e "\nDone processing with GROMACS. Use ${protein}_processed.pdb and topol.top for the simulation.\n"
+echo "To run the simulation, use 'python simulate_with_openmm.py ${protein}_processed.pdb topol.top'"
