@@ -64,12 +64,12 @@ We recommend installing [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.ht
 
 ## Main Code:  
 - **process_with_gromacs.sh**
-  - Usage: `bash process_with_gromacs.sh <protein[.pdb]>`
-  - Outputs: topology file ('topol.top') and your solvated, neutralized system ('\<protein\>_processed.gro')
+  - Usage: `bash process_with_gromacs.sh myProtein.pdb`
+  - Outputs: topology file ('topol.top') and your solvated, neutralized system ('myProtein_processed.gro')
   - Uses basic GROMACS commands. Uses a99SB-disp force field with TIP4P-D water.
 - **simulate_with_openmm.py**
   - Example usage:  
-      - `python simulate_with_openmm.py <protein[_processed.gro]>`   
+      - `python simulate_with_openmm.py <protein>_processed.gro`   
 
       - `python simulate_with_openmm.py myProtein_processed.gro --restrain` to keep heavy atoms on protein restrained  
 
@@ -78,7 +78,7 @@ We recommend installing [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.ht
   - Runs a short MD simulation with a99SB-disp force field in NPT ensemble  
 - water_triplets/**triplet.py**
   - Example usage:  
-      - `python triplet.py <protein[_processed.gro]> <trajectory> -res <int>` to analyze one residue  
+      - `python triplet.py <protein>_processed.gro <trajectory> -res <int>` to analyze one residue  
 
       - `python triplet.py myProtein_processed.gro traj.dcd -res 10 -ch B` to analyze residue 10 on chain B  
 
@@ -89,11 +89,11 @@ We recommend installing [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.ht
       - `python triplet.py myProtein_processed.gro traj.dcd -res 10 --hydrationCutoff 6 --time 1` to define hydration waters as being 6 Angstroms (default is 4.25A) around resid 10's heavy atoms, and to analyze just the last 1 ns (default is 5 ns) of the trajectory   
   - Outputs: a txt file (in 'angles' subdirectory) of water triplet angles in the hydration shell of the group you selected where each frame of the trajectory is a new line.
 - water_triplets/**run_triplets_parallel.py**
-  - Usage: `python run_triplets_parallel.py <protein[.pdb]> --nprocs 8`
+  - Usage: `python run_triplets_parallel.py myProtein.pdb --nprocs 8`
   - Parallelizes `python triple.py` calls across multiple CPU processors; defaults to one call per residue.
 - water_triplets/**process_angles.py**
   - Example usage:  
-    - `python process_angles.py <protein[.pdb]>`  
+    - `python process_angles.py myProtein.pdb`  
     - `python process_angles.py myProtein.pdb --multiChain` use when your protein has multiple chains  
 
     - `python process_angles.py myProtein.pdb --groupsFile myCustomGroups.txt` use when you created several custom groups to analyze  
@@ -101,12 +101,25 @@ We recommend installing [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.ht
     - `python process_angles.py myProtein.pdb --oneAnglesFile 'myProtein_resname_LYS_and_name_NZ_angles.txt'` to process just a single group's angles
   - Outputs: csv file ('{protein_name}_triplet_data.csv') with the group[s] triplet distributions
 - water_triplets/**analyze_groups.py**
-  - Usage: `python analyze_groups.py <protein[.pdb]>`
+  - Usage: `python analyze_groups.py myProtein.pdb`
   - Outputs: 4 "colored" pdb files by property, histograms of the 4 properties, and 2D plots of each group's PCs (all in parent directory)
     - pdb files: {protein}_Fdewet_colored.pdb, {protein}_PC1_colored.pdb, {protein}_PC2_colored.pdb, {protein}_PC3_colored.pdb
     - histogram of 4 properties: {protein}_histograms.png
     - 2D PC plots: {protein}_PCs_2D.png
-      
+- water_enthalpy/**potential.py**
+  - Example Usage:
+    - `python potential.py myProtein_processed.gro traj.dcd --top topol.top -res 10 -t 5 --skip 50 --cutoff 0.55` to measure interactions between waters (within 0.55 nm) and residue 10 in the last 5ns of the trajectory, looking at every 50th frame. 
+    - `python potential.py myProtein_processed.gro traj.dcd --top topol.top -res 1 -ch B` to look at residue 1 in chain B. You can also use `--groupsFile` & `--groupNum`, or `--selection` to make an arbitrary selection with MDAnalysis selection strings. You can normalize by the number of hydration waters with the `--norm_per_water` flag.
+  - Outputs: a csv file (in 'energies' subdirectory) with coulombic potential energy, LJ potential energy, and total potential energy between your group (e.g. residue 10) and waters within a cutoff (default 1nm).
+- water_enthalpy/**run_potentials_parallel.py** and **run_potentials_serial.py**
+  - Example Usage:
+    - `python run_potentials_parallel.py myProtein.pdb traj.dcd --top topol.top --nprocs 8` to analyze all residues in the original pdb across 8 parallel processors; ideal if CPUs are available and cheap. Add `--multiChain` if you want to analyze each residue on each chain of your pdb file.
+    - `python run_potentials_serial.py myProtein.pdb traj.dcd --top topol.top` to serially analyze all residues on a GPU; ideal if you don't have many CPU processors available
+    - `python run_potentials_parallel.py myProtein.pdb traj.dcd --top topol.top --nprocs 8 --groupsFile groups_file.txt` to analyze each custom group in groups_file.txt (one per line) across 8 CPU processors
+- water_enthalpy/**process_potentials.py**
+  - Usage: `python process_potentials.py <protein>.pdb` with optional `--multiChain` to process all the residues in all the chains of your input, or `--groupsFile` flags if you want to process custom groups from a .txt file.
+  - Outputs: a csv file with avg coulombic potential energy, avg LJ energy, and average total energy for each group (e.g. each residue, or each custom group).
+
 
 ## Supporting Code:
 - remove_checkpointed_duplicates.py
