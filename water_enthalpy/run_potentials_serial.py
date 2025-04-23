@@ -40,10 +40,8 @@ if __name__ == "__main__":
                         help="Force CPU platform (pass --nogpu to potential.py)")
     parser.add_argument("--skip", type=int, default=50,
                         help="Frame stride (default 50; reduce for better confidence bars)")
-    parser.add_argument("--cutoff", type=float, default=1.0,
-                        help="Cutoff distance in nm (default 1.0)")
-    parser.add_argument("--norm_per_water", action="store_true",
-                        help="Normalize per water residues in cutoff")
+    parser.add_argument("--cutoff", type=float, default=5.5,
+                        help="Cutoff distance in Angstrom (default 5.5)")
     parser.add_argument("--outdir", type=str, default="energies",
                         help="Output directory (default: energies)")
     
@@ -77,8 +75,7 @@ if __name__ == "__main__":
                       "-t", str(args.time),
                       "--skip", str(args.skip),
                       "--cutoff", str(args.cutoff)]
-                 + (["--nogpu"] if args.nogpu else [])
-                 + (["--norm_per_water"] if args.norm_per_water else []))
+                 + (["--nogpu"] if args.nogpu else []))
             for i in range(len(groups))
         ]
 
@@ -93,8 +90,7 @@ if __name__ == "__main__":
                       "-t", str(args.time),
                       "--skip", str(args.skip),
                       "--cutoff", str(args.cutoff)]
-                 + (["--nogpu"] if args.nogpu else [])
-                 + (["--norm_per_water"] if args.norm_per_water else []))
+                 + (["--nogpu"] if args.nogpu else []))
             for rid, sid in zip(resids, segids)
         ]
 
@@ -108,8 +104,7 @@ if __name__ == "__main__":
                       "-t", str(args.time),
                       "--skip", str(args.skip),
                       "--cutoff", str(args.cutoff)]
-                 + (["--nogpu"] if args.nogpu else [])
-                 + (["--norm_per_water"] if args.norm_per_water else []))
+                 + (["--nogpu"] if args.nogpu else []))
             for rid in resids
         ]
 

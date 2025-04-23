@@ -31,6 +31,10 @@ parser.add_argument('--groupNum', type=int)
 parser.add_argument('--selection')
 parser.add_argument('--hydrationCutoff', type=float, default=4.25)
 parser.add_argument('--hydrationLowCutoff', type=float, default=None)
+parser.add_argument('--outdir', default='angles',
+                    help='Output directory (default: angles)')
+parser.add_argument('--skip', type=int, default=1,
+                    help='Process every Nth frame (default 1 = every frame)')
 args = parser.parse_args()
 
 # some checks
@@ -55,7 +59,7 @@ else:
 if args.hydrationLowCutoff is not None:
     out_base += f'_lowC_{args.hydrationLowCutoff}_highC_{args.hydrationCutoff}'
 
-angles_dir   = 'angles'
+angles_dir   = args.outdir
 os.makedirs(angles_dir, exist_ok=True)
 output_path  = os.path.join(angles_dir, out_base+'_angles.txt')
 
@@ -87,7 +91,11 @@ BoxDims    = u.dimensions[:3]
 lowCut     = 0.0
 highCut    = 3.5
 
-# checkpointing
+# how many frames back from the end we care about
+frames_to_load = int((args.time*1e3)/u.trajectory.dt)
+first_idx      = max(0, total_frames - frames_to_load)
+
+# --- checkpointing on number of lines already in the output file ---
 done_lines = 0
 if os.path.exists(output_path):
     with open(output_path) as fh:
@@ -95,12 +103,23 @@ if os.path.exists(output_path):
             pass
     print(f"Resuming – {done_lines} frames already present in {output_path}")
 
-traj_slice = u.trajectory[first_idx+done_lines:]
-with open(output_path, 'a') as out_f:
-    for i, ts in tqdm(enumerate(traj_slice, start=done_lines),
-                      total=frames_to_load-done_lines, unit='frame'):
+# compute the list of frame‐indices we actually want to step through
+start_frame   = first_idx + done_lines * args.skip
+end_frame     = total_frames
+stride        = args.skip
+frame_indices = range(start_frame, end_frame, stride)
 
-        # hydration‑water selection
+with open(output_path, 'a') as out_f:
+    # total iterations = number of indices left
+    total_iters = len(frame_indices)
+    for write_idx, frame_idx in tqdm(
+          enumerate(frame_indices, start=done_lines),
+          total=total_iters, unit='frame'
+    ):
+        # explicitly jump to that frame
+        u.trajectory[frame_idx]
+
+        # hydration-water selection (unchanged)…  
         if args.hydrationLowCutoff:
             shell = u.select_atoms(
                 f'({waters_sel}) and around {args.hydrationCutoff} ({sel}) '
@@ -109,16 +128,19 @@ with open(output_path, 'a') as out_f:
             shell = u.select_atoms(
                 f'({waters_sel}) and around {args.hydrationCutoff} ({sel})')
 
-        # compute triplet angles (using C-implementation from waterlib)
-        ang_np, _ = wl.triplet_angles(shell.positions,
-                                      u.select_atoms(waters_sel).positions,
-                                      BoxDims, lowCut, highCut)
+        # compute triplet angles as before
+        ang_np, _ = wl.triplet_angles(
+            shell.positions,
+            u.select_atoms(waters_sel).positions,
+            BoxDims, lowCut, highCut
+        )
 
-        # write immediately
+        # write one line per processed frame
         out_f.write(" ".join(f"{a:.1f}" for a in ang_np) + "\n")
 
-        # flush every 500 frames
-        if i % 500 == 0:
+        # flush periodically
+        if write_idx % 500 == 0:
             out_f.flush()
+
 
 print(f"Done! Angles in {output_path}")

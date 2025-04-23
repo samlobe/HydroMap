@@ -24,6 +24,7 @@ from tqdm import tqdm
 # ----------------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Process potentials and output group averages.")
 parser.add_argument("protein", help="Unprocessed protein file (e.g. myProtein.pdb)")
+parser.add_argument("--energiesDir", type=str, default="energies", help="Directory containing the energies files")
 parser.add_argument("--multiChain", action="store_true", help="Protein has multiple chains")
 parser.add_argument("--groupsFile", type=str, help="File listing custom groups (MDAnalysis selection strings)")
 parser.add_argument("--onePotentialsFile", type=str, help="Process just a single potentials CSV file")
@@ -112,7 +113,7 @@ elif args.groupsFile:
         groups_selection = [line for line in f if not line.strip().startswith('#')]
     total_groups = len(groups_selection)
     for group_num in tqdm(np.arange(1, total_groups+1)):
-        potentials_path = f'{script_dir}/energies/{protein_name}_group{group_num}_energies.csv'
+        potentials_path = f'{script_dir}/{args.energiesDir}/{protein_name}_group{group_num}_energies.csv'
         if not os.path.exists(potentials_path):
             print(f"Group {group_num} data missing: {potentials_path}")
             continue
@@ -130,14 +131,14 @@ else:
     segids = u.residues.segids
     for resid, segid in zip(tqdm(resids), segids):
         if args.multiChain:
-            potentials_path = f'{script_dir}/energies/{protein_name}_res{resid}_chain{segid}_energies.csv'
+            potentials_path = f'{script_dir}/{args.energiesDir}/{protein_name}_res{resid}_chain{segid}_energies.csv'
             if not os.path.exists(potentials_path):
                 print(f"Data missing for: residue {resid} chain {segid}")
                 continue
             seq_id = resid - u.residues.resids[0]
             group_names.append(f'{sequence[seq_id]}{resid}_chain{segid}')
         else:
-            potentials_path = f'{script_dir}/energies/{protein_name}_res{resid}_energies.csv'
+            potentials_path = f'{script_dir}/{args.energiesDir}/{protein_name}_res{resid}_energies.csv'
             if not os.path.exists(potentials_path):
                 print(f"Data missing for: residue {resid}")
                 continue
@@ -148,12 +149,13 @@ else:
         avg_coulomb = df['coulomb'].mean()
         avg_lj = df['lj'].mean()
         avg_total = df['total'].mean()
-        group_means.append((avg_coulomb, avg_lj, avg_total))
+        avg_nwaters = df['n_waters'].mean()
+        group_means.append((avg_coulomb, avg_lj, avg_total, avg_nwaters))
 
 # ----------------------------------------------------------------------
 #  Assemble dataframe
 # ----------------------------------------------------------------------
-columns = ['avg_coulomb (kJ/mol)', 'avg_lj (kJ/mol)', 'avg_total (kJ/mol)']
+columns = ['avg_coulomb (kJ/mol)', 'avg_lj (kJ/mol)', 'avg_total (kJ/mol)', 'avg_n_waters']
 groups_df = pd.DataFrame(data=group_means, index=group_names, columns=columns)
 
 output_filename = args.outputFile if args.outputFile else f'{protein_name}_potential_data.csv'

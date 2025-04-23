@@ -12,6 +12,7 @@ from tqdm import tqdm
 parser = argparse.ArgumentParser(description='Read the triplet angles of your protein and output triplet distributions.')
 # Add arguments
 parser.add_argument('protein', help="unprocessed protein file ( e.g. <protein>[.pdb] )")
+parser.add_argument('--anglesDir', type=str, default='angles', help="directory containing the angles files")
 parser.add_argument('--multiChain', action='store_true', help="protein has multiple chains")
 parser.add_argument('--groupsFile', type=str, help='to reference a file containing your custom groups (i.e. MDAnalysis selection strings, one group per line).')
 parser.add_argument('--oneAnglesFile', type=str, help='to process data from one angles file (e.g. angles/<protein>_<selection>_angles.txt)')
@@ -143,7 +144,7 @@ elif args.groupsFile: # reading the custom groups in the groups file if given
         groups_selection = [line for line in f if not line.strip().startswith('#')]
     total_groups = len(groups_selection)
     for group_num in tqdm(np.arange(1,total_groups+1)):
-        group_file = f'{script_dir}/angles/{protein_name}_group{group_num}_angles.txt'
+        group_file = f'{script_dir}/{args.anglesDir}/{protein_name}_group{group_num}_angles.txt'
         if not os.path.exists(group_file):
             print(f'Group {group_num} data is missing.')
             continue
@@ -164,7 +165,7 @@ else:
     groups_selection = [] # for MDAnalysis selection strings
     for i, (resid, segid) in enumerate(zip(tqdm(resids), segids)):
         if args.multiChain:
-            group_file = f'{script_dir}/angles/{protein_name}_res{resid}_chain{segid}_angles.txt'
+            group_file = f'{script_dir}/{args.anglesDir}/{protein_name}_res{resid}_chain{segid}_angles.txt'
             if not os.path.exists(group_file):
                 print(f'Data missing for: residue {resid} chain {segid}')
                 continue
@@ -172,7 +173,7 @@ else:
             group_names.append(f'{sequence[seq_id]}{resid}_chain{segid}')
             groups_selection.append(f'resid {resid} and segid {segid}') # not excluding hydrogens
         else:
-            group_file = f'{script_dir}/angles/{protein_name}_res{resid}_angles.txt'
+            group_file = f'{script_dir}/{args.anglesDir}/{protein_name}_res{resid}_angles.txt'
             if not os.path.exists(group_file):
                 print(f'Data missing for: residue {resid}')
                 continue

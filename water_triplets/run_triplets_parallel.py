@@ -37,6 +37,10 @@ if __name__ == "__main__":
                         help="File with MDAnalysis selection strings, one per line")
     parser.add_argument("-t","--time", type=int, default=5,
                         help="Last X ns to analyse in each job (default 5)")
+    parser.add_argument("--hydrationCutoff", type=float, default=4.25,
+                        help="Hydration cutoff in Angstroms (default 4.25)")
+    parser.add_argument("--outdir", type=str, default="angles",
+                        help="Output directory for angles files (default 'angles')")
     parser.add_argument("--nprocs", type=int, default=os.cpu_count(),
                         help="Number of parallel processes (default = all CPUs)")
     
@@ -71,7 +75,9 @@ if __name__ == "__main__":
             dict(kind="group",
                  cmd=["python", "triplet.py", processed_pdb_path, args.trajectory,
                       "--groupsFile", args.groupsFile, "--groupNum", str(i+1),
-                      "-t", str(args.time)])
+                      "-t", str(args.time),
+                      "--hydrationCutoff", str(args.hydrationCutoff),
+                      "--outdir", args.outdir])
             for i in range(len(groups))
         ]
 
@@ -82,7 +88,9 @@ if __name__ == "__main__":
             dict(kind="residue",
                  cmd=["python", "triplet.py", processed_pdb_path, args.trajectory,
                       "-res", str(rid), "-ch", str(sid),
-                      "-t", str(args.time)])
+                      "-t", str(args.time),
+                      "--hydrationCutoff", str(args.hydrationCutoff),
+                      "--outdir", args.outdir])
             for rid, sid in zip(resids, segids)
         ]
 
@@ -92,7 +100,9 @@ if __name__ == "__main__":
             dict(kind="residue",
                  cmd=["python", "triplet.py", processed_pdb_path, args.trajectory,
                       "-res", str(rid),
-                      "-t", str(args.time)])
+                      "-t", str(args.time),
+                      "--hydrationCutoff", str(args.hydrationCutoff),
+                      "--outdir", args.outdir])
             for rid in resids
         ]
 

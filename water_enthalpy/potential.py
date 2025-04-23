@@ -91,10 +91,8 @@ def main():
                         help="Frame stride (default 50; reduce for better confidence bars)")
     parser.add_argument("--nogpu", action="store_true",
                         help="Force CPU platform")
-    parser.add_argument("--cutoff", type=float, default=0.55,
-                        help="Cutoff distance in nm (default 0.55)")
-    parser.add_argument("--norm_per_water", action="store_true",
-                        help="Normalize per water residues in cutoff")
+    parser.add_argument("--cutoff", type=float, default=5.5,
+                        help="Cutoff distance in Angstroms (default 5.5)")
     parser.add_argument("--outdir", type=str, default="energies",
                         help="Output directory (default: energies)")
     args = parser.parse_args()
@@ -152,7 +150,7 @@ def main():
     
     top = GromacsTopFile(args.top,
                          periodicBoxVectors=box_vectors)
-    system = prepare_system(top, pdb, group_idx, solvent_idx, cutoff_nm=args.cutoff) # pdb instead of gro for pdb support laters
+    system = prepare_system(top, pdb, group_idx, solvent_idx, cutoff_nm=args.cutoff/10) # pdb instead of gro for pdb support laters
 
     # pick platform
     if args.nogpu:
@@ -172,32 +170,31 @@ def main():
     frames_to_analyse = int(args.time*1000 / u.trajectory.dt)
     first = max(0, nframes - frames_to_analyse)
 
-    coul_list, lj_list = [], []
+    coul_list, lj_list, nwaters_list = [], [], []
 
     for ts in tqdm(u.trajectory[first::args.skip]):
         positions_nm = ts.positions / 10.0  # Å → nm
         context.setPositions(positions_nm * nanometer)
 
-        if args.norm_per_water:
-            water_oxygens = 'resname SOL and name O*'
-            group = sel_str
-            shell_waters = u.select_atoms(f'{water_oxygens} and around {args.cutoff * 10} ({group})')
-            n_within_cutoff = len(shell_waters)
-            if n_within_cutoff == 0:
-                n_within_cutoff = 1 # avoid division by zero
+        water_oxygens = 'resname SOL and name O*'
+        group = sel_str
+        shell_waters = u.select_atoms(f'{water_oxygens} and around {args.cutoff} ({group})')
+        n_within_cutoff = len(shell_waters)
 
         total    = coulomb_energy(context, 1, 1)
         group_ce = coulomb_energy(context, 1, 0)
         solv_ce  = coulomb_energy(context, 0, 1)
         coul     = (total - group_ce - solv_ce).value_in_unit(kilojoule_per_mole)
         lj = context.getState(getEnergy=True, groups={1}).getPotentialEnergy()
-        
-        if args.norm_per_water:
+
+        # normalize per-water   
+        if n_within_cutoff > 0:     
             lj = lj / n_within_cutoff
             coul = coul / n_within_cutoff
 
         coul_list.append(coul)
         lj_list.append(lj.value_in_unit(kilojoule_per_mole))
+        nwaters_list.append(n_within_cutoff)
 
     total_arr = np.array(coul_list) + np.array(lj_list)
 
@@ -223,7 +220,8 @@ def main():
     df = pd.DataFrame({
         "coulomb": coul_list,
         "lj":      lj_list,
-        "total":   total_arr
+        "total":   total_arr,
+        "n_waters": nwaters_list
     })
     df.to_csv(out_csv, index=False)
     print(f"\nSaved energies from {len(df)} frames of the MD simulation to {out_csv}")
