@@ -6,14 +6,16 @@ import os
 from time import time
 from tqdm import tqdm
 import argparse
+import sys
 
 parser = argparse.ArgumentParser(description='Run a NPT simulation from a processed protein file.')
-parser.add_argument('protein', help='Name of the processed protein structure file (.gro) for the simulation job, e.g. myProtein_processed[.gro]')
+parser.add_argument('protein', help='Name of the processed protein structure file (.pdb) for the simulation job, e.g. myProtein_processed.pdb')
 parser.add_argument('topol', help='Name of the Gromacs topology file (.top) for the simulation job, e.g. topol.top')
 parser.add_argument('-ns','--nanoseconds',default=5,type=float,help='Time in ns you wish to simulate.')
 parser.add_argument('-r','--restrain',action='store_true',help='Restrain heavy atoms of protein.')
 parser.add_argument('--random_seed',default=42,type=int,help='Random seed for the simulation.')
 parser.add_argument('-o','--output',default='traj.dcd',type=str,help='Output trajectory file name (.dcd)')
+parser.add_argument('--noCUDA',action='store_true',help='set to avoid using CUDA.')
 args = parser.parse_args()
 
 # example usage: python simulate_with_openmm.py myProtein_processed -ns 5 -r -o traj.dcd
@@ -31,7 +33,6 @@ with open(protein_file, 'r') as f:
     for line in f:
         if line.startswith('CRYST1'):
             fields = line.split()
-            print(fields)
             a = float(fields[1]) * 0.1 # convert to nm
             b = float(fields[2]) * 0.1
             c = float(fields[3]) * 0.1
@@ -45,7 +46,7 @@ if box_vectors is None:
 
 
 # load gromacs topology file
-top = GromacsTopFile('topol.top', periodicBoxVectors=box_vectors)
+top = GromacsTopFile(args.topol, periodicBoxVectors=box_vectors)
 
 
 pressure = 1*atmosphere  # Store pressure
@@ -70,7 +71,24 @@ integrator = LangevinMiddleIntegrator(temperature, friction, dt)
 integrator.setRandomNumberSeed(args.random_seed)
 
 # Setup Platform for GPU
-platform = Platform.getPlatformByName('CUDA')
+
+# Check if CUDA is available
+if args.noCUDA:
+    print("Ignoring CUDA...")
+    try: 
+        platform = Platform.getPlatformByName('OpenCL')
+        print("Falling back to OpenCL platform.")
+    except Exception as e:
+        print("Falling back to CPU (will be extremely slow).")
+        platform = Platform.getPlatformByName('CPU')
+else:
+    try:
+        platform = Platform.getPlatformByName('CUDA')
+        print("Using CUDA platform.")
+    except Exception as e:
+        print("Error: CUDA platform not avaialble.")
+        print("Hint: Enable CUDA or use the --noCUDA flag to fall back to OpenCL (slower) or CPU (extremely slow).")
+        sys.exit(1)
 
 # Set reporter frequency
 report_frequency_ps = 1  # Every 1 ps

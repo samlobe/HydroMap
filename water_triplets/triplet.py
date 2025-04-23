@@ -19,7 +19,7 @@ except ImportError:
 parser = argparse.ArgumentParser(
     description=("Compile water triplet angles around the residue/"
                  "custom group in your protein.\n"
-                 "Example: python triplet.py protein.gro traj.dcd -res 42"))
+                 "Example: python triplet.py protein_processed.pdb traj.dcd -res 42"))
 parser.add_argument('protein')
 parser.add_argument('trajectory')
 parser.add_argument('-res','--resid', type=int)
@@ -34,7 +34,7 @@ parser.add_argument('--hydrationLowCutoff', type=float, default=None)
 args = parser.parse_args()
 
 # some checks
-protein_processed = args.protein if args.protein.endswith('.gro') else args.protein+'.gro'
+protein_processed = args.protein if args.protein.endswith('.pdb') else args.protein+'.pdb'
 if not os.path.exists(protein_processed):
     sys.exit(f"Error: cannot find {protein_processed}")
 if not os.path.exists(args.trajectory):

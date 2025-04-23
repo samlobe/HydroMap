@@ -35,7 +35,7 @@ if __name__ == "__main__":
                         help="Protein has multiple chains")
     parser.add_argument("--groupsFile",
                         help="File with MDAnalysis selection strings, one per line")
-    parser.add_argument("-t","--timeLimit", type=int, default=5,
+    parser.add_argument("-t","--time", type=int, default=5,
                         help="Last X ns to analyse in each job (default 5)")
     parser.add_argument("--nprocs", type=int, default=os.cpu_count(),
                         help="Number of parallel processes (default = all CPUs)")
@@ -45,12 +45,16 @@ if __name__ == "__main__":
         sys.exit("ERROR: use EITHER --multiChain OR --groupsFile, not both")
 
     pdb_path  = args.protein if args.protein.endswith(".pdb") else args.protein + ".pdb"
+    # check if "processed" is in pdb_path and throw a warning asking for the unprocessed pdb as input
+    if "processed" in pdb_path:
+        sys.exit("ERROR: I see 'processed' in the protein file name. Please provide the unprocessed PDB file as input (i.e. no waters/ions).")
+
     if not os.path.exists(pdb_path):
         sys.exit(f"ERROR: cannot find {pdb_path}")
 
-    gro_path  = pdb_path[:-4] + "_processed.gro"
-    if not os.path.exists(gro_path):
-        sys.exit(f"ERROR: cannot find processed GRO {gro_path}")
+    processed_pdb_path  = pdb_path[:-4] + "_processed.pdb"
+    if not os.path.exists(processed_pdb_path):
+        sys.exit(f"ERROR: cannot find processed PDB {processed_pdb_path}")
 
     if not os.path.exists(args.trajectory):
         sys.exit(f"ERROR: cannot find trajectory {args.trajectory}")
@@ -65,9 +69,9 @@ if __name__ == "__main__":
             groups = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
         work_items = [
             dict(kind="group",
-                 cmd=["python", "triplet.py", gro_path, args.trajectory,
+                 cmd=["python", "triplet.py", processed_pdb_path, args.trajectory,
                       "--groupsFile", args.groupsFile, "--groupNum", str(i+1),
-                      "-t", str(args.timeLimit)])
+                      "-t", str(args.time)])
             for i in range(len(groups))
         ]
 
@@ -76,9 +80,9 @@ if __name__ == "__main__":
         segids = u.residues.segids
         work_items = [
             dict(kind="residue",
-                 cmd=["python", "triplet.py", gro_path, args.trajectory,
+                 cmd=["python", "triplet.py", processed_pdb_path, args.trajectory,
                       "-res", str(rid), "-ch", str(sid),
-                      "-t", str(args.timeLimit)])
+                      "-t", str(args.time)])
             for rid, sid in zip(resids, segids)
         ]
 
@@ -86,9 +90,9 @@ if __name__ == "__main__":
         resids = u.residues.resids
         work_items = [
             dict(kind="residue",
-                 cmd=["python", "triplet.py", gro_path, args.trajectory,
+                 cmd=["python", "triplet.py", processed_pdb_path, args.trajectory,
                       "-res", str(rid),
-                      "-t", str(args.timeLimit)])
+                      "-t", str(args.time)])
             for rid in resids
         ]
 

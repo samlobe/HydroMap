@@ -8,7 +8,8 @@ Example
 python run_potentials_parallel.py ../protein.pdb ../traj.dcd --top ../topol.top -t 5 --skip 50 --nprocs 8
 """
 
-import argparse, os, sys, subprocess, itertools, time
+import argparse, os, sys, subprocess, itertools
+from time import time
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -37,7 +38,7 @@ if __name__ == "__main__":
                         help="Protein has multiple chains")
     parser.add_argument("--groupsFile",
                         help="File with MDAnalysis selection strings, one per line")
-    parser.add_argument("-t","--timeLimit", type=int, default=5,
+    parser.add_argument("-t","--time", type=int, default=5,
                         help="Last X ns to analyse in each job (default 5)")
     parser.add_argument("--nprocs", type=int, default=os.cpu_count(),
                         help="Number of parallel processes (default = all CPUs)")
@@ -60,9 +61,9 @@ if __name__ == "__main__":
     if not os.path.exists(pdb_path):
         sys.exit(f"ERROR: cannot find {pdb_path}")
 
-    gro_path  = pdb_path[:-4] + "_processed.gro"
-    if not os.path.exists(gro_path):
-        sys.exit(f"ERROR: cannot find processed GRO {gro_path}")
+    processed_pdb_path  = pdb_path[:-4] + "_processed.pdb"
+    if not os.path.exists(processed_pdb_path):
+        sys.exit(f"ERROR: cannot find processed PDB {processed_pdb_path}")
 
     if not os.path.exists(args.trajectory):
         sys.exit(f"ERROR: cannot find trajectory {args.trajectory}")
@@ -77,12 +78,13 @@ if __name__ == "__main__":
             groups = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
         work_items = [
             dict(kind="group",
-                 cmd=["python", "potential.py", gro_path, args.trajectory,
+                 cmd=["python", "potential.py", processed_pdb_path, args.trajectory,
                       "--groupsFile", args.groupsFile, "--groupNum", str(i+1),
-                      "-t", str(args.timeLimit),
+                      "-t", str(args.time),
                       "--skip", str(args.skip),
                       "--cutoff", str(args.cutoff)]
-                 + (["--nogpu"] if args.nogpu else []))
+                 + (["--nogpu"] if args.nogpu else [])
+                 + (["--norm_per_water"] if args.norm_per_water else []))
             for i in range(len(groups))
         ]
 
@@ -91,13 +93,14 @@ if __name__ == "__main__":
         segids = u.residues.segids
         work_items = [
             dict(kind="residue",
-                 cmd=["python", "potential.py", gro_path, args.trajectory,
+                 cmd=["python", "potential.py", processed_pdb_path, args.trajectory,
                       "--top", args.top,
                       "-res", str(rid), "-ch", str(sid),
-                      "-t", str(args.timeLimit),
+                      "-t", str(args.time),
                       "--skip", str(args.skip),
                       "--cutoff", str(args.cutoff)]
-                 + (["--nogpu"] if args.nogpu else []))
+                 + (["--nogpu"] if args.nogpu else [])
+                 + (["--norm_per_water"] if args.norm_per_water else []))
             for rid, sid in zip(resids, segids)
         ]
 
@@ -105,22 +108,23 @@ if __name__ == "__main__":
         resids = u.residues.resids
         work_items = [
             dict(kind="residue",
-                 cmd=["python", "potential.py", gro_path, args.trajectory,
+                 cmd=["python", "potential.py", processed_pdb_path, args.trajectory,
                       "--top", args.top,
                       "-res", str(rid),
-                      "-t", str(args.timeLimit),
+                      "-t", str(args.time),
                       "--skip", str(args.skip),
                       "--cutoff", str(args.cutoff)]
-                 + (["--nogpu"] if args.nogpu else []))
+                 + (["--nogpu"] if args.nogpu else [])
+                 + (["--norm_per_water"] if args.norm_per_water else []))
             for rid in resids
         ]
 
     total_jobs = len(work_items)
-    print(f"Preparing {total_jobs} potential jobs "
+    print(f"Preparing {total_jobs} jobs to measure potentials "
           f"({args.nprocs} parallel processes)…\n")
 
     #  parallel execution with progress
-    start = time.time()
+    start = time()
     fails = []
 
     with ProcessPoolExecutor(max_workers=args.nprocs) as pool:
@@ -133,7 +137,7 @@ if __name__ == "__main__":
                 fails.append((cmd, err.strip()))
             print(f"\rCompleted {done_so_far}/{total_jobs}", end="", flush=True)
 
-    elapsed = time.time() - start
+    elapsed = time() - start
     print("\n")
 
     #  summarize

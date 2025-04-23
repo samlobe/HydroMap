@@ -38,6 +38,10 @@ if not os.path.exists(pdb_path):
     print(f"Error: Can't find {pdb_path}")
     sys.exit(1)
 
+if 'processed' in pdb_path:
+    print(f"Error: I see 'processed' in the protein file name. Please provide the unprocessed PDB file as input (i.e. no waters/ions).")
+    sys.exit(1)
+
 # extract protein name from the protein file name
 protein_name = protein[:-4] # excluding the '.pdb' part
 # check if the protein name ends with '_withH', if so remove it
