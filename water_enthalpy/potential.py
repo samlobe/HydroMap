@@ -10,6 +10,8 @@ Example
 -------
 python potential.py ../protein_processed.pdb ../traj.dcd --top ../topol.top -res 10 -t 5 --skip 50
 """
+# Note: this works for a99SBdisp which puts coulombic potential in nonbonded force and lj in custom nonbonded force
+# See OpenMM cookbook on computing interaction energies (https://openmm.github.io/openmm-cookbook/dev/notebooks/cookbook/Computing%20Interaction%20Energies.html)
 
 import os, sys, argparse, time, warnings
 import numpy as np
@@ -26,7 +28,7 @@ from openmm.app.forcefield import CutoffPeriodic
 #  Helper : build OpenMM system & tag forces
 # ----------------------------------------------------------------------
 def prepare_system(topfile, pdb, group_idx, solvent_idx,
-                   cutoff_nm=1.0):
+                   cutoff_nm=0.55):
     """
     Returns (system, residue_set, solvent_set)
     """
@@ -35,8 +37,8 @@ def prepare_system(topfile, pdb, group_idx, solvent_idx,
                                   nonbondedCutoff = cutoff_nm * nanometer,
                                   constraints      = None)
 
-    residue = set(group_idx)
-    solvent = set(solvent_idx)
+    residue_idx = set(group_idx)
+    solvent_idx = set(solvent_idx)
 
     for force in system.getForces():
         # NonbondedForce: separate Coulomb term via parameter offsets
@@ -46,12 +48,17 @@ def prepare_system(topfile, pdb, group_idx, solvent_idx,
             force.addGlobalParameter("solvent_scale", 1.0)
 
             for i in range(force.getNumParticles()):
+                # store the original parameters
                 q, s, eps = force.getParticleParameters(i)
-                label = "group_scale" if i in residue else "solvent_scale"
-                # zero out parameters
+                # zero out parameters for all particles
                 force.setParticleParameters(i, 0, 0, 0)
-                force.addParticleParameterOffset(label, i, q, s, eps)
 
+                # add back the parameters for the residue and solvent
+                if np.logical_or(i in residue_idx, i in solvent_idx):
+                    label = "group_scale" if i in residue_idx else "solvent_scale"
+                    force.addParticleParameterOffset(label, i, q, s, eps)
+
+            # turn off exceptions (since we're only looking at intermolecular forces)
             for i in range(force.getNumExceptions()):
                 p1, p2, qprod, s, eps = force.getExceptionParameters(i)
                 force.setExceptionParameters(i, p1, p2, 0, 0, 0)
@@ -59,7 +66,7 @@ def prepare_system(topfile, pdb, group_idx, solvent_idx,
         # CustomNonbondedForce: Amber FF stores LJ here → restrict to cross term
         elif force.__class__.__name__ == "CustomNonbondedForce":
             force.setForceGroup(1)
-            force.addInteractionGroup(residue, solvent)
+            force.addInteractionGroup(residue_idx, solvent_idx)
         else:
             force.setForceGroup(2)   # everything else ignored
 
