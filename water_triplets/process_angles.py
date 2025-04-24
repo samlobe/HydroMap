@@ -61,11 +61,20 @@ bin_width = 5 # degrees
 min = 40
 max = 180
 bins = np.arange(min,max+bin_width,bin_width)
+
 def histo_line(data):
-    histo_height, bin_edges = np.histogram(data, bins=bins, density=True)
-    bin_middle = np.diff(bin_edges)/2
-    bin_middle = bin_middle + bin_edges[:len(bin_middle)]
+    if len(data) == 0 or np.all(np.isnan(data)):
+        # Return zeros to prevent crash
+        bin_middle = (bins[:-1] + bins[1:]) / 2
+        histo_height = np.zeros_like(bin_middle)
+    else:
+        with np.errstate(divide='ignore', invalid='ignore'):
+            histo_height, _ = np.histogram(data, bins=bins, density=True)
+            if np.isnan(histo_height).any():
+                histo_height = np.nan_to_num(histo_height)
+        bin_middle = (bins[:-1] + bins[1:]) / 2
     return bin_middle, histo_height
+
 
 # function to read the angles from the .txt files created by triplets.py
 def read_angles(filepath):
