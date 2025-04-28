@@ -26,7 +26,7 @@ def parse_args():
     p.add_argument('pdb',   help='input PDB file')
     p.add_argument('csv',   help='results CSV with MDAnalysis_selection_strings column')
     p.add_argument('--properties', nargs='+',
-                   default=['PC1','PC2','PC3','Fdewet_pred'],
+                   default=['PC1','PC2','PC3','Fdewet_pred','water_potential'],
                    help='property column(s) to map onto B-factors '
                         '(default: PC1 PC2 PC3 Fdewet_pred)')
     p.add_argument('--minWaters', type=float, default=None,

@@ -99,7 +99,7 @@ def main():
         sel=[f'resid {r}' for r in u.residues.resids]
 
     # angles
-    hrows, avgs = [], []
+    hrows = []
     for ix,s in enumerate(tqdm(sel,desc='Angles')):
         tag=f'group{ix+1}' if a.groupsFile else None
         path=( f'{a.anglesDir}/{prot}_{tag}_angles.txt' if tag else
@@ -109,10 +109,9 @@ def main():
         if not os.path.exists(path): warnings.warn(f'{path} missing'); continue
         flat,avgN=flat_angles(path)
         if mask is not None: flat=flat[mask[:len(flat)]]
-        hrows.append(histo_line(flat)); avgs.append(avgN)
+        hrows.append(histo_line(flat))
 
     hist_df=pd.DataFrame(hrows,index=sel,columns=BIN_MIDS)
-    hist_df['avg_residue_angles']=avgs
     hist_df['MDAnalysis_selection_strings']=sel
 
     # add 10° bins needed by model
@@ -176,6 +175,7 @@ def main():
                       'PC2':features['PC2'],
                       'PC3':features['PC3'],
                       'Fdewet_pred':preds,
+                      'water_potential':features['total_pot'],
                       'avg_n_waters':features['avg_n_waters'],})
     
     # round PC1, PC2, PC3, and Fdewet_pred to 3 decimal places
@@ -184,6 +184,7 @@ def main():
     res['PC3'] = res['PC3'].round(3)
     res['Fdewet_pred'] = res['Fdewet_pred'].round(3)
     res['avg_n_waters'] = res['avg_n_waters'].round(1)
+    res['water_potential'] = res['water_potential'].round(3)
 
     res.to_csv(f'{a.outdir}/{prot}_results.csv', index=False)
     print('Finished. Results written to', f'{a.outdir}/{prot}_results.csv')
