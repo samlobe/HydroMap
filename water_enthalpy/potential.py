@@ -194,11 +194,6 @@ def main():
         coul     = (total - group_ce - solv_ce).value_in_unit(kilojoule_per_mole)
         lj = context.getState(getEnergy=True, groups={1}).getPotentialEnergy()
 
-        # normalize per-water   
-        if n_within_cutoff > 0:     
-            lj = lj / n_within_cutoff
-            coul = coul / n_within_cutoff
-
         coul_list.append(coul)
         lj_list.append(lj.value_in_unit(kilojoule_per_mole))
         nwaters_list.append(n_within_cutoff)
