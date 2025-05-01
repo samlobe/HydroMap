@@ -152,10 +152,10 @@ def main():
     tots,nwats,idx=[],[],[]
     for ix,s in enumerate(tqdm(sel,desc='Potentials')):
         tag=f'group{ix+1}' if a.groupsFile else None
-        pot=( f'{a.potentialsDir}/{prot}_{tag}_energies.csv' if tag else
-              (f'{a.potentialsDir}/{prot}_res{resnums[ix]}_chain{u.residues[ix].segid}_energies.csv'
+        pot=( f'{a.potentialsDir}/{prot}_{tag}_potentials.csv' if tag else
+              (f'{a.potentialsDir}/{prot}_res{resnums[ix]}_chain{u.residues[ix].segid}_potentials.csv'
                if a.multiChain else
-               f'{a.potentialsDir}/{prot}_res{resnums[ix]}_energies.csv') )
+               f'{a.potentialsDir}/{prot}_res{resnums[ix]}_potentials.csv') )
         if not os.path.exists(pot): warnings.warn(f'{pot} missing'); continue
         df=pd.read_csv(pot)
         if mask is not None: df=df[mask[:len(df)]]

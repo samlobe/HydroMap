@@ -74,6 +74,9 @@ run_gmx_command "gmx grompp -f ions.mdp -c ${protein}_processed.gro -p topol.top
 run_gmx_command "echo 0 | gmx trjconv -f ${protein}_processed.gro -s ${protein}_processed.tpr -o ${protein}_processed.pdb" \
     "Converting the processed .gro file back to .pdb format..."
 
+# copy the {protein}_processed.pdb to the above directory
+cp ${protein}_processed.pdb ../
+
 echo "Cleaning up files..."
 rm ${protein}_newbox.gro ${protein}_noSolvent.gro ${protein}_solv.gro posre*.itp mdout.mdp ions.tpr ${protein}_processed.tpr ${protein}_processed.gro
 find . -maxdepth 1 -type f -name "#*" -exec rm -f {} \;
