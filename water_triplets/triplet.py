@@ -12,7 +12,7 @@ except ImportError:
         "\nERROR: Could not import waterlib.\n"
         "Please compile it first (from the 'water_triplets' directory):\n\n"
         "    python setup.py build_ext --inplace\n\n"
-        "Make sure waterlib.c exists and that you are running Python in the same directory.\n"
+        "Make sure waterlib.c exists in the same directory as triplet.py.\n"
     )
 
 

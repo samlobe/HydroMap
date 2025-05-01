@@ -1,18 +1,29 @@
 #!/usr/bin/env python3
 """
-Run many potential.py jobs **serially** on the local machine.
-Ideal if you have a GPU but few available CPUs. My GPU (RTX 3090 Ti) breaks even with ~10 CPU processors (Intel CoreTM i9-14900K) in speed.
+Run many potential.py jobs in parallel on the local machine.
+Ideal for CPU parallelization if CPUs are cheap and available.
 
 Example
 -------
-python run_potentials_serial.py ../protein.pdb ../traj.dcd --top ../topol.top -t 5 --skip 50
+python run_potentials_parallel.py ../protein.pdb ../traj.dcd --top ../topol.top -t 5 --skip 50 --nprocs 8
 """
 
-import argparse, os, sys, subprocess
+import argparse, os, sys, subprocess, itertools
 from time import time
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path
+
 import numpy as np
 import MDAnalysis as mda
 
+SCRIPT_DIR   = Path(__file__).resolve().parent
+POTENTIAL_PATH = SCRIPT_DIR / "potential.py"      # => /full/path/to/potential.py
+
+# throw error if potential.py is not found in the same directory as this script
+if not POTENTIAL_PATH.exists():
+    sys.exit(f"ERROR: cannot find potential.py in {SCRIPT_DIR}. "
+             "Please put potential.py and run_potentials_parallel.py are in the same directory.")
 
 def run_cmd(cmd):
     """Run a shellless subprocess and return (returncode, cmd, stderr string)."""
@@ -22,9 +33,11 @@ def run_cmd(cmd):
     return True, cmd, ""
 
 if __name__ == "__main__":
+    multiprocessing.set_start_method("spawn", force=True)
+
     parser = argparse.ArgumentParser(
         description="Launch one potential.py job per residue (or custom group) "
-                    "serially on local CPU/GPU."
+                    "in parallel on local CPUs."
     )
     parser.add_argument("protein",  help="input PDB (unprocessed)")
     parser.add_argument("trajectory", help="trajectory file (e.g. traj.dcd)")
@@ -36,14 +49,16 @@ if __name__ == "__main__":
                         help="File with MDAnalysis selection strings, one per line")
     parser.add_argument("-t","--time", type=int, default=5,
                         help="Last X ns to analyse in each job (default 5)")
-    parser.add_argument("--nogpu", action="store_true", default=False,
+    parser.add_argument("--nprocs", type=int, default=os.cpu_count(),
+                        help="Number of parallel processes (default = all CPUs)")
+    parser.add_argument("--nogpu", action="store_true", default=True, # default True since this is meant for cpu parallelization
                         help="Force CPU platform (pass --nogpu to potential.py)")
     parser.add_argument("--skip", type=int, default=50,
                         help="Frame stride (default 50; reduce for better confidence bars)")
     parser.add_argument("--cutoff", type=float, default=4.25,
-                        help="Cutoff distance in Angstrom (default 4.25)")
-    parser.add_argument("--outdir", type=str, default="energies",
-                        help="Output directory (default: energies)")
+                        help="Cutoff distance in Angstroms (default 4.25)")
+    parser.add_argument("--outdir", type=str, default="potentials",
+                        help="Output directory (default: potentials)")
     
     args = parser.parse_args()
     if args.multiChain and args.groupsFile:
@@ -62,7 +77,7 @@ if __name__ == "__main__":
 
     protein_name = os.path.splitext(os.path.basename(pdb_path))[0]
 
-    # parse the groups
+    #  parse the groups
     u = mda.Universe(pdb_path)
 
     if args.groupsFile:
@@ -70,11 +85,13 @@ if __name__ == "__main__":
             groups = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
         work_items = [
             dict(kind="group",
-                 cmd=["python", "potential.py", processed_pdb_path, args.trajectory,
+                 cmd=["python", str(POTENTIAL_PATH), processed_pdb_path, args.trajectory,
+                      "--top", args.top,
                       "--groupsFile", args.groupsFile, "--groupNum", str(i+1),
                       "-t", str(args.time),
                       "--skip", str(args.skip),
-                      "--cutoff", str(args.cutoff)]
+                      "--cutoff", str(args.cutoff),
+                      "--outdir", str(args.outdir)]
                  + (["--nogpu"] if args.nogpu else []))
             for i in range(len(groups))
         ]
@@ -84,12 +101,13 @@ if __name__ == "__main__":
         segids = u.residues.segids
         work_items = [
             dict(kind="residue",
-                 cmd=["python", "potential.py", processed_pdb_path, args.trajectory,
+                 cmd=["python", str(POTENTIAL_PATH), processed_pdb_path, args.trajectory,
                       "--top", args.top,
                       "-res", str(rid), "-ch", str(sid),
                       "-t", str(args.time),
                       "--skip", str(args.skip),
-                      "--cutoff", str(args.cutoff)]
+                      "--cutoff", str(args.cutoff),
+                      "--outdir", str(args.outdir)]
                  + (["--nogpu"] if args.nogpu else []))
             for rid, sid in zip(resids, segids)
         ]
@@ -98,30 +116,34 @@ if __name__ == "__main__":
         resids = u.residues.resids
         work_items = [
             dict(kind="residue",
-                 cmd=["python", "potential.py", processed_pdb_path, args.trajectory,
+                 cmd=["python", str(POTENTIAL_PATH), processed_pdb_path, args.trajectory,
                       "--top", args.top,
                       "-res", str(rid),
                       "-t", str(args.time),
                       "--skip", str(args.skip),
-                      "--cutoff", str(args.cutoff)]
+                      "--cutoff", str(args.cutoff),
+                      "--outdir", str(args.outdir)]
                  + (["--nogpu"] if args.nogpu else []))
             for rid in resids
         ]
 
     total_jobs = len(work_items)
-    print(f"Preparing {total_jobs} jobs measuring potentials (running serially)...\n")
+    print(f"Preparing {total_jobs} jobs to measure potentials "
+          f"({args.nprocs} parallel processes)…\n")
 
-    #  serial execution with progress
+    #  parallel execution with progress
     start = time()
     fails = []
-    done_so_far = 0
 
-    for w in work_items:
-        ok, cmd, err = run_cmd(w["cmd"])
-        done_so_far += 1
-        if not ok:
-            fails.append((cmd, err.strip()))
-        print(f"\rCompleted {done_so_far}/{total_jobs}", end="", flush=True)
+    with ProcessPoolExecutor(max_workers=args.nprocs) as pool:
+        futures = {pool.submit(run_cmd, w["cmd"]): w for w in work_items}
+        done_so_far = 0
+        for fut in as_completed(futures):
+            ok, cmd, err = fut.result()
+            done_so_far += 1
+            if not ok:
+                fails.append((cmd, err.strip()))
+            print(f"\rCompleted {done_so_far}/{total_jobs}", end="", flush=True)
 
     elapsed = time() - start
     print("\n")

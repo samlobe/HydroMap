@@ -20,7 +20,7 @@ import argparse, os, sys, re, warnings, pickle, joblib
 from collections import OrderedDict
 import numpy as np, pandas as pd, MDAnalysis as mda
 from tqdm import tqdm
-import convert_triplets
+from utils.get_PCs import get_PCs
 
 BIN_WIDTH   = 5
 ANGLE_MIN   = 40
@@ -131,7 +131,20 @@ def main():
         hist_df[f'{rng[0]}-{rng[1]}_tri']=hist_df[c1]+hist_df[f1]
 
     # PCs via convert_triplets
-    pc_df=convert_triplets.get_PCs(hist_df,a.forcefield)  # PC1–3
+    # first check if data/bulk_water_triplets.csv and data/principalComps.csv exist
+    if not os.path.exists('data/bulk_water_triplets.csv'):
+        sys.exit('Cannot see data/bulk_water_triplets.csv. Consider making a symbol link to the data directory: `ln -s <path_to_data_dir>`')
+    if not os.path.exists('data/principalComps.csv'):
+        sys.exit('Cannot see data/bulk_water_triplets.csv. Consider making a symbol link to the data directory: `ln -s <path_to_data_dir>`')
+    # import the bulk water triplet distribution
+    df_bulk = pd.read_csv('data/bulk_water_triplets.csv',index_col=0)
+    df_bulk.columns = df_bulk.columns.astype(float)
+    # import the principal components from Robinson / Jiao's PCA analysis
+    # which describes the solute's triplet distribution subtracted by the bulk water triplet distribution
+    PCs = pd.read_csv('data/principalComps.csv',index_col=0)
+    PCs.columns = PCs.columns.astype(float)
+
+    pc_df = get_PCs(hist_df, a.forcefield, df_bulk, PCs) # get PC1, PC2, PC3
 
     angles_df=hist_df.drop(columns=['MDAnalysis_selection_strings'])
 
@@ -195,6 +208,7 @@ def main():
     X = features[order].copy()
     if scaler is not None:  X = scaler.transform(X)
 
+    print("Predicting Fdewet from protein-water potential and triplet angle features (assuming you used the default 4.25A cutoff).")
     preds = mdl.predict(X)
 
     # compile results

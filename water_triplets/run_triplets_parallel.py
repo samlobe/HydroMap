@@ -10,9 +10,18 @@ python run_triplets_parallel.py protein.pdb traj.dcd -t 5 --nprocs 8
 import argparse, os, sys, subprocess, itertools, time
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path
 
 import numpy as np
 import MDAnalysis as mda
+
+SCRIPT_DIR   = Path(__file__).resolve().parent
+TRIPLET_PATH = SCRIPT_DIR / "triplet.py"      # => /full/path/to/triplet.py
+
+# throw error if triplet.py is not found in the same directory as this script
+if not TRIPLET_PATH.exists():
+    sys.exit(f"ERROR: cannot find triplet.py in {SCRIPT_DIR}. "
+             "Please put triplet.py, run_triplets_parallel.py, and the waterlib executable in the same directory.")
 
 #  Worker helper (must be top-level function; enables it to work on both Mac and Linux)
 def run_cmd(cmd):
@@ -75,7 +84,7 @@ if __name__ == "__main__":
             groups = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
         work_items = [
             dict(kind="group",
-                 cmd=["python", "triplet.py", processed_pdb_path, args.trajectory,
+                 cmd=["python", str(TRIPLET_PATH), processed_pdb_path, args.trajectory,
                       "--groupsFile", args.groupsFile, "--groupNum", str(i+1),
                       "-t", str(args.time),
                       "--hydrationCutoff", str(args.hydrationCutoff),
@@ -89,7 +98,7 @@ if __name__ == "__main__":
         segids = u.residues.segids
         work_items = [
             dict(kind="residue",
-                 cmd=["python", "triplet.py", processed_pdb_path, args.trajectory,
+                 cmd=["python", str(TRIPLET_PATH), processed_pdb_path, args.trajectory,
                       "-res", str(rid), "-ch", str(sid),
                       "-t", str(args.time),
                       "--hydrationCutoff", str(args.hydrationCutoff),
@@ -102,7 +111,7 @@ if __name__ == "__main__":
         resids = u.residues.resids
         work_items = [
             dict(kind="residue",
-                 cmd=["python", "triplet.py", processed_pdb_path, args.trajectory,
+                 cmd=["python", str(TRIPLET_PATH), processed_pdb_path, args.trajectory,
                       "-res", str(rid),
                       "-t", str(args.time),
                       "--hydrationCutoff", str(args.hydrationCutoff),

@@ -28,7 +28,7 @@ from openmm.app.forcefield import CutoffPeriodic
 #  Helper : build OpenMM system & tag forces
 # ----------------------------------------------------------------------
 def prepare_system(topfile, pdb, group_idx, solvent_idx,
-                   cutoff_nm=0.55):
+                   cutoff_nm=0.425):
     """
     Returns (system, residue_set, solvent_set)
     """
@@ -100,8 +100,8 @@ def main():
                         help="Force CPU platform")
     parser.add_argument("--cutoff", type=float, default=4.25,
                         help="Cutoff distance in Angstroms (default 4.25)")
-    parser.add_argument("--outdir", type=str, default="energies",
-                        help="Output directory (default: energies)")
+    parser.add_argument("--outdir", type=str, default="potentials",
+                        help="Output directory (default: potentials)")
     args = parser.parse_args()
 
     # checks
@@ -217,7 +217,7 @@ def main():
     # exclude _processed from filename
     if base.endswith("_processed"):
         base = base[:-10]
-    out_csv = os.path.join(out_dir, f"{base}_{tag}_energies.csv")
+    out_csv = os.path.join(out_dir, f"{base}_{tag}_potentials.csv")
 
     df = pd.DataFrame({
         "coulomb": coul_list,
