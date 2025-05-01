@@ -29,7 +29,7 @@ def parse_args():
                    default=['PC1','PC2','PC3','Fdewet_pred','water_potential'],
                    help='property column(s) to map onto B-factors '
                         '(default: PC1 PC2 PC3 Fdewet_pred)')
-    p.add_argument('--minWaters', type=float, default=None,
+    p.add_argument('--minWaters', type=float, default=7,
                    help='Only colour groups with avg_n_waters >= this value')
     p.add_argument('-o','--outdir', default='.',
                    help='directory for coloured PDBs (default: .)')
@@ -54,7 +54,12 @@ def main():
     if a.minWaters is not None:
         before = len(df)
         df = df[df['avg_n_waters'] >= a.minWaters]
-        print(f"Filtered groups: kept {len(df)}/{before} entries with avg_n_waters >= {a.minWaters}")
+        print(f"Filtered groups: kept {len(df)}/{before} entries with >= {a.minWaters} avg hydration waters (within 4.25A of selection).")
+
+
+    # if water_potential in properties, rename to U_pw
+    if 'water_potential' in a.properties:
+        a.properties = [prop if prop != 'water_potential' else 'U_pw' for prop in a.properties]
 
     # ensure requested properties exist
     missing = [prop for prop in a.properties if prop not in df.columns]
@@ -74,15 +79,25 @@ def main():
         # assign property to requested selections
         for _,row in df.iterrows():
             sel = row['MDAnalysis_selection_strings']
-            val = row[prop]
+            val = row[prop] if prop != 'water_potential' else row['U_pw'] # accepting both names
+
+            if prop in ['water_potential','U_pw']:
+                # divide by avg_n_waters to get per-water potential since it's more visually meaningful
+                if 'avg_n_waters' in row:
+                    val /= row['avg_n_waters']
+                else:
+                    print(f'Warning – no avg_n_waters for selection "{sel}".')
+                    continue
+
             atoms = u.select_atoms(sel)
             if len(atoms) == 0:
                 print(f'Warning – selection "{sel}" matched 0 atoms.')
                 continue
             atoms.tempfactors = np.round(val, 2)
         
-        # rename "Fdewet_pred" to "Fdewet" in output
-        label = prop if prop != 'Fdewet_pred' else 'Fdewet'
+        # rename "Fdewet_pred" to "Fdewet", and U_pw to water_potential
+        label = prop.replace('Fdewet_pred', 'Fdewet').replace('U_pw', 'water_potential')
+    
         out_pdb = os.path.join(a.outdir, f'{base}_{label}_colored.pdb')
 
         u.atoms.write(out_pdb)

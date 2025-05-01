@@ -11,8 +11,9 @@ Outputs these CSVs to the output directory (e.g. ./results):
   angles_and_potentials_<protein>.csv
   <protein>_results.csv
 
-Example usage: python process_and_predict.py SARS2.pdb --anglesDir triplets --potentialsDir
- potentials --model ../models/Fdewet_protein_context.joblib
+Example usage:
+python process_and_predict.py SARS2.pdb --anglesDir angles --potentialsDir
+ energies --model ../models/Fdewet.joblib
 """
 # %%
 import argparse, os, sys, re, warnings, pickle, joblib
@@ -137,13 +138,8 @@ def main():
         if mask is not None: df=df[mask[:len(df)]]
         tots.append(df['total'].mean()); nwats.append(df['n_waters'].mean()); idx.append(s)
 
-    pot_df=pd.DataFrame({'total_pot':tots,'avg_n_waters':nwats},index=idx)
+    pot_df=pd.DataFrame({'U_pw':tots,'avg_n_waters':nwats},index=idx)
     pot_df['MDAnalysis_selection_strings']=idx
-
-    # angles + potentials)
-    pd.merge(angles_df, pot_df.drop(columns=['MDAnalysis_selection_strings']),
-             left_index=True,right_index=True).to_csv(
-             f'{a.outdir}/angles_and_potentials_{prot}.csv')
 
     # Compile model inputs (needs two 10° + total_pot) 
     features=pd.merge(hist_df,pc_df[['PC1','PC2','PC3']],
@@ -151,6 +147,11 @@ def main():
     features=pd.merge(features,
                       pot_df.drop(columns=['MDAnalysis_selection_strings']),
                       left_index=True,right_index=True)
+    # output features df to angles_and_potentials_<protein>.csv
+    features.to_csv(f'{a.outdir}/angles_and_potentials_{prot}.csv', index=False)
+    
+    # match the names the model may expect
+    features['PC1_tri'] = features['PC1']
 
     # load model
     bundle=joblib.load(a.model)
@@ -162,6 +163,11 @@ def main():
         mdl    = bundle
         scaler = None
         order  = getattr(mdl,'feature_names_in_', features.columns)
+
+    # ensure all features are present
+    for f in order:
+        if f not in features.columns:
+            raise ValueError(f'Missing feature {f} in input data.')
 
     # ensure column order & scale
     X = features[order].copy()
@@ -175,7 +181,7 @@ def main():
                       'PC2':features['PC2'],
                       'PC3':features['PC3'],
                       'Fdewet_pred':preds,
-                      'water_potential':features['total_pot'],
+                      'U_pw':features['U_pw'],
                       'avg_n_waters':features['avg_n_waters'],})
     
     # round PC1, PC2, PC3, and Fdewet_pred to 3 decimal places
@@ -184,7 +190,7 @@ def main():
     res['PC3'] = res['PC3'].round(3)
     res['Fdewet_pred'] = res['Fdewet_pred'].round(3)
     res['avg_n_waters'] = res['avg_n_waters'].round(1)
-    res['water_potential'] = res['water_potential'].round(3)
+    res['U_pw'] = res['U_pw'].round(3)
 
     res.to_csv(f'{a.outdir}/{prot}_results.csv', index=False)
     print('Finished. Results written to', f'{a.outdir}/{prot}_results.csv')
