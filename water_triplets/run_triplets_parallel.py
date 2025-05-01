@@ -39,6 +39,8 @@ if __name__ == "__main__":
                         help="Last X ns to analyse in each job (default 5)")
     parser.add_argument("--hydrationCutoff", type=float, default=4.25,
                         help="Hydration cutoff in Angstroms (default 4.25)")
+    parser.add_argument("--skip", type=int, default=1,
+                        help="Frame stride (default 1)")
     parser.add_argument("--outdir", type=str, default="angles",
                         help="Output directory for angles files (default 'angles')")
     parser.add_argument("--nprocs", type=int, default=os.cpu_count(),
@@ -77,6 +79,7 @@ if __name__ == "__main__":
                       "--groupsFile", args.groupsFile, "--groupNum", str(i+1),
                       "-t", str(args.time),
                       "--hydrationCutoff", str(args.hydrationCutoff),
+                        "--skip", str(args.skip),
                       "--outdir", args.outdir])
             for i in range(len(groups))
         ]
@@ -90,6 +93,7 @@ if __name__ == "__main__":
                       "-res", str(rid), "-ch", str(sid),
                       "-t", str(args.time),
                       "--hydrationCutoff", str(args.hydrationCutoff),
+                      "--skip", str(args.skip),
                       "--outdir", args.outdir])
             for rid, sid in zip(resids, segids)
         ]
@@ -102,6 +106,7 @@ if __name__ == "__main__":
                       "-res", str(rid),
                       "-t", str(args.time),
                       "--hydrationCutoff", str(args.hydrationCutoff),
+                      "--skip", str(args.skip),
                       "--outdir", args.outdir])
             for rid in resids
         ]

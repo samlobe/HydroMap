@@ -31,8 +31,8 @@ def parse_args():
                         '(default: PC1 PC2 PC3 Fdewet_pred)')
     p.add_argument('--minWaters', type=float, default=7,
                    help='Only colour groups with avg_n_waters >= this value')
-    p.add_argument('-o','--outdir', default='.',
-                   help='directory for coloured PDBs (default: .)')
+    p.add_argument('-o','--outdir', default='results',
+                   help='directory for coloured PDBs (default: results)')
     p.add_argument('--pad', type=float, default=-100.0,
                    help='B-factor for atoms not in any selection (default: -100)')
     return p.parse_args()

@@ -47,6 +47,8 @@ def parse_args():
                    help="ensures each chain's residues are analyzed separately")
     p.add_argument('--mask', help='NumPy .npy frame-mask (bool/0-1)') # haven't tested yet
     p.add_argument('-o','--outdir', default='results')
+    p.add_argument('-ff','--forcefield', default='a99SBdisp',
+                   help='forcefield for convert_triplets and read bulk (default: a99SBdisp)')
     return p.parse_args()
 
 def extract_resnum(s):
@@ -77,6 +79,14 @@ def pdb_sequence(path):
 
 def main():
     a=parse_args(); os.makedirs(a.outdir, exist_ok=True)
+
+    model_name = os.path.basename(a.model)
+    if model_name == 'Fdewet.joblib' and a.forcefield != 'a99SBdisp':
+        sys.exit('Fdewet.joblib model only trained with a99SBdisp forcefield.')
+    
+    if model_name == 'Fdewet_isolated_aa_multi_forcefield.joblib' and a.forcefield not in ['a99SBdisp', 'a03ws','C36m']:
+        sys.exit('Only these forcefields are currently supported for single aa model: a99SBdisp, a03ws, C36m.')
+
     pdb=a.protein if a.protein.endswith('.pdb') else a.protein+'.pdb'
     if not os.path.exists(pdb): sys.exit(f'Cannot find {pdb}')
     prot=os.path.splitext(os.path.basename(pdb))[0].removesuffix('_withH')
@@ -121,7 +131,7 @@ def main():
         hist_df[f'{rng[0]}-{rng[1]}_tri']=hist_df[c1]+hist_df[f1]
 
     # PCs via convert_triplets
-    pc_df=convert_triplets.get_PCs(hist_df,'a99SBdisp')  # PC1–3
+    pc_df=convert_triplets.get_PCs(hist_df,a.forcefield)  # PC1–3
 
     angles_df=hist_df.drop(columns=['MDAnalysis_selection_strings'])
 
@@ -150,8 +160,20 @@ def main():
     # output features df to angles_and_potentials_<protein>.csv
     features.to_csv(f'{a.outdir}/angles_and_potentials_{prot}.csv', index=False)
     
-    # match the names the model may expect
-    features['PC1_tri'] = features['PC1']
+    # get the name of the model
+    if model_name == 'Fdewet_isolated_aa_multi_forcefield.joblib':
+        # fix the names the model expects
+        features['PC1_tri'] = features['PC1']
+        # add the bulk_80-90 bin manually
+        if a.forcefield == 'a99SBdisp':
+            features['bulk_80-90_tri'] = 0.023396 * np.ones(len(features))
+        elif a.forcefield == 'a03ws':
+            features['bulk_80-90_tri'] = 0.023285 * np.ones(len(features))
+        elif a.forcefield == 'C36m':
+            features['bulk_80-90_tri'] = 0.021381 * np.ones(len(features))
+        else:
+            raise ValueError(f'Unknown forcefield {a.forcefield}.')
+
 
     # load model
     bundle=joblib.load(a.model)
