@@ -1,10 +1,10 @@
-# protein_WaterStructure_Hydrophobicity
+# HydroMap
 
-Use water structure analysis to color your protein based on predicted dewetting free energy (using Sam Lobo & Saeed Najafi's hydrophobicity model) and water triplet distribution principal component contributions (from Dennis Robinson and Sally Jiao's [work](https://pubs.acs.org/doi/10.1021/acs.jpcb.3c00826) modelling small hydrophobes).  
+Modeling water-protein interactions to map a protein's water structure, water-protein enthalpy, and dewetting free energy.  
 
 <img src="images/SARS2_before_vs_after.png" width="600" align="center" alt="Uncolored pdb input vs colored pdb output">
 
-This analysis takes <20 min of computation for a 100 residue protein, including ~15 min on a GPU (NVIDIA RTX 3090 Ti) and ~2min on 24 CPU processors (Intel CoreTM i9-14900K with 1 thread per solvated residue / custom group). This time can be reduced depending on your confidence interval tolerance.  
+This analysis takes <10 min of computation for a 100 residue protein, including ~8 min for a 5ns MD simulation on a GPU (NVIDIA RTX 3090 Ti) and <2 min to process each residue on 30 CPU processors (Intel CoreTM i9-14900K with 1 processor per solvated residue / custom group). This time can be reduced depending on your confidence interval tolerance.  
 
 ---
 
@@ -13,20 +13,18 @@ This analysis takes <20 min of computation for a 100 residue protein, including 
 
 ### **Output:**
 - pdb file with dewetting free energy predictions of each residue (or custom group) listed in the tempfactor column
-- 3 pdb files with the 3 principal component contributions of each residue (or custom group) listed in the tempfactor column
-- csv file with triplet distribution for each residue (or custom group), histograms and plots of dewetting free energy predictions & principal componenet contributions, and many txt files of raw data triplet angles  
+- pdb files with either predicted dewetting free energy, water structure features ([water triplet distribution principal components](https://pubs.acs.org/doi/10.1021/acs.jpcb.3c00826)), or water-protein potential energy for each residue (or custom group)
+- csv files with water structure features, water-protein potential energy, and dewetting free energy features for each residue (or custom group) 
 
 ---
 
 ## Procedure summary:
 
-1. Use GROMACS to ***build your system***: protein + water + ions
-2. Use OpenMM to ***run a short MD simulation*** (GPU recommended)
-3. ***Measure water angles*** around each residue/group (parallel CPUs recommended)
-4. ***Process water angles***, and ***output pdbs*** with stored dewetting free energy predictions and principal component contributions
-5. **Color pdbs** by dewetting free energy and principal component contributions
+1. Use OpenMM to ***run a short MD simulation*** (GPU recommended)
+2. Measure ***water angles*** and **water-protein potentials** for each residue/group (parallel CPUs recommended)
+3. **Color pdbs** by predicted dewetting free energy, water structure features, and water-protein potential energy
 
-You can skip steps 1 & 2 if you already have a simulation to analyze.  
+You can skip steps 1 if you already have a simulation to analyze.  
 
 ---
 
@@ -116,9 +114,10 @@ We recommend installing [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.ht
     - `python run_potentials_parallel.py myProtein.pdb traj.dcd --top topol.top --nprocs 8` to analyze all residues in the original pdb across 8 parallel processors; ideal if CPUs are available and cheap. Add `--multiChain` if you want to analyze each residue on each chain of your pdb file.
     - `python run_potentials_serial.py myProtein.pdb traj.dcd --top topol.top` to serially analyze all residues on a GPU; ideal if you don't have many CPU processors available
     - `python run_potentials_parallel.py myProtein.pdb traj.dcd --top topol.top --nprocs 8 --groupsFile groups_file.txt` to analyze each custom group in groups_file.txt (one per line) across 8 CPU processors
-- water_enthalpy/**process_potentials.py**
-  - Usage: `python process_potentials.py <protein>.pdb` with optional `--multiChain` to process all the residues in all the chains of your input, or `--groupsFile` flags if you want to process custom groups from a .txt file.
-  - Outputs: a csv file with avg coulombic potential energy, avg LJ energy, and average total energy for each group (e.g. each residue, or each custom group).
+- **process_and_predict.py
+  - Example Usage:
+    - `python process_and_predict.py example_protein.pdb --anglesDir angles --potentialsDir potentials --model models/Fdewet.joblib --outdir results` to process angles/potentials and predict dewetting free energy with main model (for a99SBdisp)
+    - `python process_and_predict.py example_protein.pdb --anglesDir angles --potentialsDir potentials --model models/Fdewet_isolated_aa_multi_forcefield.joblib --outdir results` to predict using alternative dewetting free energy model (trained on isolated amino acids for a99SBdisp, a03ws, and C36m)
 
 
 ## Supporting Code:
@@ -126,12 +125,12 @@ We recommend installing [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.ht
   - Called by simulate_with_openmm.py when a simulation is restarted from a checkpoint in order to clean up duplicate frames.
 - water_triplets/waterlib.c
   - Called by triplet.py to efficiently measure water angles
-- water_triplets/convert_triplets.py
+- utils/get_PCs.py
   - Called by analyze_groups.py to convert water triplet distributions to dewetting free energy predictions and principal component contributions.
-- water_triplets/principalComps.csv
-  - Read by convert_triplets.py 
-- water_triplets/bulk_water_triplets.csv
-  - Read by convert_triplets.py
+- data/principalComps.csv
+  - Read by get_PCs.py 
+- data/bulk_water_triplets.csv
+  - Read by get_PCs.py
     
 ---
 
