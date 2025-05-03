@@ -118,13 +118,17 @@ We recommend installing [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.ht
   - Example Usage:
     - `python process_and_predict.py example_protein.pdb --anglesDir angles --potentialsDir potentials --model models/Fdewet.joblib --outdir results` to process angles/potentials and predict dewetting free energy with main model (for a99SBdisp)
     - `python process_and_predict.py example_protein.pdb --anglesDir angles --potentialsDir potentials --model models/Fdewet_isolated_aa_multi_forcefield.joblib --outdir results` to predict using alternative dewetting free energy model (trained on isolated amino acids for a99SBdisp, a03ws, and C36m)
+- **color_pdb_by_property.py**
+  - Example Usage:
+    - `python color_pbd_by_property.py results/example_protein_results.csv --outdir results` to output all one pdb per property (predicted Fdewet, protein-water potential per water, PC1, PC2, PC3) with property values in the bfactor column of the pdb.
+    - `python color_pdb_by_property.py results/example_protein_results.csv --properties PC1 --minWaters 3` to color based on just PC1 and to not color groups that had fewer than 3 hydration waters on average within 4.25 angstroms of any group atom (bfactor will be marked as -100)
 
 
 ## Supporting Code:
 - remove_checkpointed_duplicates.py
   - Called by simulate_with_openmm.py when a simulation is restarted from a checkpoint in order to clean up duplicate frames.
 - water_triplets/waterlib.c
-  - Called by triplet.py to efficiently measure water angles
+  - Compiled by setup.py (see above) to build an executable that is called by triplet.py to efficiently measure water angles
 - utils/get_PCs.py
   - Called by analyze_groups.py to convert water triplet distributions to dewetting free energy predictions and principal component contributions.
 - data/principalComps.csv
