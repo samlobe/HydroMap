@@ -14,7 +14,7 @@ parser.add_argument('topol', help='Name of the Gromacs topology file (.top) for 
 parser.add_argument('-ns','--nanoseconds',default=5,type=float,help='Time in ns you wish to simulate.')
 parser.add_argument('-r','--restrain',action='store_true',help='Restrain heavy atoms of protein.')
 parser.add_argument('--random_seed',default=42,type=int,help='Random seed for the simulation.')
-parser.add_argument('-o','--output',default='traj.dcd',type=str,help='Output trajectory file name (.dcd)')
+parser.add_argument('-o','--output',type=str,help='Output trajectory file name (.dcd), will default to {protein_name}_traj.dcd')
 parser.add_argument('--noCUDA',action='store_true',help='set to avoid using CUDA.')
 args = parser.parse_args()
 
@@ -24,6 +24,11 @@ args = parser.parse_args()
 protein_file = args.protein
 if not protein_file.endswith(".pdb"):
     protein_file += ".pdb"
+
+# extract the protein name from the file name (e.g. myProtein_processed.pdb -> myProtein_processed)
+protein_name = os.path.splitext(os.path.basename(protein_file))[0]
+if protein_name.endswith("_processed"):
+    protein_name = protein_name[:-10]
 
 pdb = PDBFile(protein_file)
 
@@ -135,10 +140,16 @@ if args.restrain:
 # Setup the Simulation
 simulation = Simulation(top.topology, system, integrator, platform)
 simulation.context.setPositions(pdb.positions)
-traj_name = args.output
+if args.output is None:
+    traj_name = f'{protein_name}_traj.dcd'
+else:
+    traj_name = args.output
 
 # Load from the checkpoint if it exists
-checkpoint_file = 'checkpoint.chk'
+checkpoint_file = f'{protein_name}_checkpoint.chk'
+energies_file = f'{protein_name}_energies.log'
+endState_file = f'{protein_name}_endState'
+
 if os.path.exists(checkpoint_file):
     tik = time()
     print("Found checkpoint file. Resuming simulation from the checkpoint.")
@@ -157,10 +168,10 @@ if os.path.exists(checkpoint_file):
 
     # Add the reporters
     simulation.reporters.append(DCDReporter(traj_name, steps_per_report, append=True))
-    simulation.reporters.append(StateDataReporter('energies.log', steps_per_report, step=True, time=True,
+    simulation.reporters.append(StateDataReporter(energies_file, steps_per_report, step=True, time=True,
                                                   potentialEnergy=True, kineticEnergy=True, totalEnergy=True,
                                                   temperature=True, volume=True, separator='\t', append=True))
-    simulation.reporters.append(CheckpointReporter('checkpoint.chk', steps_per_checkpoint))
+    simulation.reporters.append(CheckpointReporter(checkpoint_file, steps_per_checkpoint))
     remove_duplicates = True
 
     # Continue the simulation with progress bar
@@ -189,10 +200,10 @@ else:
 
     # Set up reporters
     simulation.reporters.append(DCDReporter(traj_name, steps_per_report))
-    simulation.reporters.append(StateDataReporter('energies.log', steps_per_report, step=True, time=True,
+    simulation.reporters.append(StateDataReporter(energies_file, steps_per_report, step=True, time=True,
                                                   potentialEnergy=True, kineticEnergy=True, totalEnergy=True,
                                                   temperature=True, volume=True, separator='\t'))
-    simulation.reporters.append(CheckpointReporter('checkpoint.chk', steps_per_checkpoint))
+    simulation.reporters.append(CheckpointReporter(checkpoint_file, steps_per_checkpoint))
     simulation.context.setVelocitiesToTemperature(temperature)
     remove_duplicates = False
 
@@ -207,18 +218,18 @@ else:
         simulation.step(leftover_steps)
 
 # Save the final state
-simulation.saveState("endState")
+simulation.saveState(endState_file)
 
-print(f'Done! Saved trajectory ({args.output}), state data (energies.log), and checkpoint files if you want to keep simulating later (checkpoint.chk, endState).')
+print(f'Done! Saved trajectory ({traj_name}), state data ({energies_file}), and checkpoint files if you want to keep simulating later ({checkpoint_file}, {endState_file}).')
 
 tok = time()
 print(f'Total wall clock time: {(tok - tik)/60:.1f} minutes')
-print("We recommend visualizing your trajectory (e.g. with Pymol or ChimeraX or VMD),\nand to evaluating the energies/temperature/box volumes in the energies.log file, to check if the simulation is healthy.")
+print(f"We recommend visualizing your trajectory (e.g. with Pymol or ChimeraX or VMD),\nand to evaluating the energies/temperature/box volumes in the {energies_file} file, to check if the simulation is healthy.")
 
 # clean up the duplicate frames from the trajectory and energies log if a checkpoint was used
 if remove_duplicates:
-    print(f'\nRemoving duplicate frames in {args.output} and duplicate entries in energies.log...')
+    print(f'\nRemoving duplicate frames in {args.output} and duplicate entries in {energies_file}...')
     import subprocess
-    subprocess.run(["python", "remove_checkpointed_duplicates.py",protein_file])
+    subprocess.run(["python", "remove_checkpointed_duplicates.py",protein_file,energies_file, traj_name])
 
 # %%

@@ -10,17 +10,16 @@ StandardScaler, and outputs per-group Fdewet predictions.
 Outputs these CSVs to the output directory (e.g. ./results):
   angles_and_potentials_<protein>.csv
   <protein>_results.csv
-
-Example usage:
-python process_and_predict.py SARS2.pdb --anglesDir angles --potentialsDir
- energies --model ../models/Fdewet.joblib
 """
 # %%
 import argparse, os, sys, re, warnings, pickle, joblib
 from collections import OrderedDict
 import numpy as np, pandas as pd, MDAnalysis as mda
 from tqdm import tqdm
-from utils.get_PCs import get_PCs
+try:
+    from get_PCs import get_PCs
+except ImportError:
+    sys.exit("ERROR: Cannot import get_PCs.py. Make sure it is in the same directory as the process_and_predict.py script (consider using a symbolic link: `ln -s /path/to/get_PCs.py .`).")
 
 BIN_WIDTH   = 5
 ANGLE_MIN   = 40
@@ -67,16 +66,6 @@ def flat_angles(path):
     flat=np.array([a for sub in per_frame for a in sub])
     return flat, len(flat)/len(per_frame)
 
-def pdb_sequence(path):
-    residues=OrderedDict()
-    with open(path) as fh:
-        for ln in fh:
-            if ln.startswith('ATOM'):
-                rn=int(ln[22:26]); res=ln[17:20].strip()
-                if res=='SOL': raise ValueError('Input PDB contains water.')
-                residues[rn]=AA_MAP.get(res,'X')
-    return ''.join(residues.values()), list(residues.keys())
-
 def main():
     a=parse_args(); os.makedirs(a.outdir, exist_ok=True)
 
@@ -92,101 +81,96 @@ def main():
     prot=os.path.splitext(os.path.basename(pdb))[0].removesuffix('_withH')
     mask=np.load(a.mask).astype(bool) if a.mask else None
 
-    # mutually exclusive grouping flags
     if sum([bool(a.groupsFile), a.multiChain]) > 1:
         sys.exit('Choose at most one of --groupsFile or --multiChain.')
 
     u=mda.Universe(pdb)
-    seq,resnums=pdb_sequence(pdb)
 
-    # determine selection strings
     if a.groupsFile:
         with open(a.groupsFile) as fh:
-            sel=[ln.strip() for ln in fh if ln.strip() and not ln.startswith('#')]
+            groups=[ln.strip() for ln in fh if ln.strip() and not ln.startswith('#')]
     elif a.multiChain:
-        sel=[f'resid {r} and segid {s}'
-             for r,s in zip(u.residues.resids,u.residues.segids)]
+        groups=[f'resid {r} and segid {s}' for r,s in zip(u.residues.resids,u.residues.segids)]
     else:
-        sel=[f'resid {r}' for r in u.residues.resids]
+        groups=[f'resid {r}' for r in u.residues.resids]
 
     # angles
     hrows = []
-    for ix,s in enumerate(tqdm(sel,desc='Angles')):
-        tag=f'group{ix+1}' if a.groupsFile else None
+    for i,group in enumerate(tqdm(groups,desc='Angles')):
+        residue = u.residues[i]
+        resid = residue.resid
+        segid = residue.segid.strip()
+
+        tag=f'group{i+1}' if a.groupsFile else None
         path=( f'{a.anglesDir}/{prot}_{tag}_angles.txt' if tag else
-               (f'{a.anglesDir}/{prot}_res{resnums[ix]}_chain{u.residues[ix].segid}_angles.txt'
+               (f'{a.anglesDir}/{prot}_res{resid}_chain{segid}_angles.txt'
                 if a.multiChain else
-                f'{a.anglesDir}/{prot}_res{resnums[ix]}_angles.txt') )
+                f'{a.anglesDir}/{prot}_res{resid}_angles.txt') )
         if not os.path.exists(path): warnings.warn(f'{path} missing'); continue
-        flat,avgN=flat_angles(path)
+        flat,_=flat_angles(path)
         if mask is not None: flat=flat[mask[:len(flat)]]
         hrows.append(histo_line(flat))
 
-    hist_df=pd.DataFrame(hrows,index=sel,columns=BIN_MIDS)
-    hist_df['MDAnalysis_selection_strings']=sel
+    hist_df=pd.DataFrame(hrows,index=groups,columns=BIN_MIDS)
+    hist_df['MDAnalysis_selection_strings']=groups
 
-    # add 10° bins needed by model
+    # add 10-degree bins needed by model
     for rng in [(40,50),(140,150)]:
         c1,f1=f'{rng[0]+2.5:.1f}', f'{rng[0]+7.5:.1f}'
         hist_df[f'{rng[0]}-{rng[1]}_tri']=hist_df[c1]+hist_df[f1]
 
-    # PCs via convert_triplets
-    # first check if data/bulk_water_triplets.csv and data/principalComps.csv exist
+    # get PCs from triplet angles
     if not os.path.exists('data/bulk_water_triplets.csv'):
-        sys.exit('Cannot see data/bulk_water_triplets.csv. Consider making a symbol link to the data directory: `ln -s <path_to_data_dir>`')
+        sys.exit('Missing bulk_water_triplets.csv (try: ln -s <data_dir>)')
     if not os.path.exists('data/principalComps.csv'):
-        sys.exit('Cannot see data/bulk_water_triplets.csv. Consider making a symbol link to the data directory: `ln -s <path_to_data_dir>`')
-    # import the bulk water triplet distribution
+        sys.exit('Missing principalComps.csv (try: ln -s <data_dir>)')
+
     df_bulk = pd.read_csv('data/bulk_water_triplets.csv',index_col=0)
     df_bulk.columns = df_bulk.columns.astype(float)
-    # import the principal components from Robinson / Jiao's PCA analysis
-    # which describes the solute's triplet distribution subtracted by the bulk water triplet distribution
+
     PCs = pd.read_csv('data/principalComps.csv',index_col=0)
     PCs.columns = PCs.columns.astype(float)
 
-    pc_df = get_PCs(hist_df, a.forcefield, df_bulk, PCs) # get PC1, PC2, PC3
-
+    pc_df = get_PCs(hist_df, a.forcefield, df_bulk, PCs)
     angles_df=hist_df.drop(columns=['MDAnalysis_selection_strings'])
 
     # potentials
     tots,nwats,idx=[],[],[]
-    for ix,s in enumerate(tqdm(sel,desc='Potentials')):
-        tag=f'group{ix+1}' if a.groupsFile else None
+    for i,group in enumerate(tqdm(groups,desc='Potentials')):
+        residue = u.residues[i]
+        resid = residue.resid
+        segid = residue.segid.strip()
+
+        tag=f'group{i+1}' if a.groupsFile else None
         pot=( f'{a.potentialsDir}/{prot}_{tag}_potentials.csv' if tag else
-              (f'{a.potentialsDir}/{prot}_res{resnums[ix]}_chain{u.residues[ix].segid}_potentials.csv'
+              (f'{a.potentialsDir}/{prot}_res{resid}_chain{segid}_potentials.csv'
                if a.multiChain else
-               f'{a.potentialsDir}/{prot}_res{resnums[ix]}_potentials.csv') )
+               f'{a.potentialsDir}/{prot}_res{resid}_potentials.csv') )
         if not os.path.exists(pot): warnings.warn(f'{pot} missing'); continue
         df=pd.read_csv(pot)
         if mask is not None: df=df[mask[:len(df)]]
-        tots.append(df['total'].mean()); nwats.append(df['n_waters'].mean()); idx.append(s)
+        tots.append(df['total'].mean()); nwats.append(df['n_waters'].mean()); idx.append(group)
 
     pot_df=pd.DataFrame({'U_pw':tots,'avg_n_waters':nwats},index=idx)
     pot_df['MDAnalysis_selection_strings']=idx
 
-    # Compile model inputs (needs two 10° + total_pot) 
     features=pd.merge(hist_df,pc_df[['PC1','PC2','PC3']],
                       left_index=True,right_index=True)
     features=pd.merge(features,
                       pot_df.drop(columns=['MDAnalysis_selection_strings']),
                       left_index=True,right_index=True)
-    # output features df to angles_and_potentials_<protein>.csv
     features.to_csv(f'{a.outdir}/angles_and_potentials_{prot}.csv', index=False)
-    
-    # get the name of the model
+
     if model_name == 'Fdewet_isolated_aa_multi_forcefield.joblib':
-        # fix the names the model expects
         features['PC1_tri'] = features['PC1']
-        # add the bulk_80-90 bin manually
         if a.forcefield == 'a99SBdisp':
-            features['bulk_80-90_tri'] = 0.023396 * np.ones(len(features))
+            features['bulk_80-90_tri'] = 0.023396
         elif a.forcefield == 'a03ws':
-            features['bulk_80-90_tri'] = 0.023285 * np.ones(len(features))
+            features['bulk_80-90_tri'] = 0.023285
         elif a.forcefield == 'C36m':
-            features['bulk_80-90_tri'] = 0.021381 * np.ones(len(features))
+            features['bulk_80-90_tri'] = 0.021381
         else:
             raise ValueError(f'Unknown forcefield {a.forcefield}.')
-
 
     # load model
     bundle=joblib.load(a.model)
@@ -199,19 +183,18 @@ def main():
         scaler = None
         order  = getattr(mdl,'feature_names_in_', features.columns)
 
-    # ensure all features are present
     for f in order:
         if f not in features.columns:
             raise ValueError(f'Missing feature {f} in input data.')
 
-    # ensure column order & scale
+    # ensure all features are present
     X = features[order].copy()
     if scaler is not None:  X = scaler.transform(X)
 
     print("Predicting Fdewet from protein-water potential and triplet angle features (assuming you used the default 4.25A cutoff).")
     preds = mdl.predict(X)
 
-    # compile results
+    # output results
     res=pd.DataFrame({'MDAnalysis_selection_strings':features['MDAnalysis_selection_strings'],
                       'PC1':features['PC1'],
                       'PC2':features['PC2'],
@@ -220,7 +203,6 @@ def main():
                       'U_pw':features['U_pw'],
                       'avg_n_waters':features['avg_n_waters'],})
     
-    # round PC1, PC2, PC3, and Fdewet_pred to 3 decimal places
     res['PC1'] = res['PC1'].round(3)
     res['PC2'] = res['PC2'].round(3)
     res['PC3'] = res['PC3'].round(3)

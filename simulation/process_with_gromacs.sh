@@ -19,7 +19,15 @@ if [ ! -f "$protein.pdb" ]; then
     exit 1
 fi
 
-# Function to run gmx command and display messages
+# create the log file and delete the old one if it exists
+log_file="${protein}_gromacs_processing.log"
+if [ -f "$log_file" ]; then
+    rm "$log_file"
+fi
+touch "$log_file"
+
+topol_file="${protein}.top"
+
 # Function to run gmx command and display messages
 run_gmx_command() {
     command=$1
@@ -28,48 +36,41 @@ run_gmx_command() {
     echo -e "\n$message"
     echo "Executing: $command"
 
-    # Check if the command has a pipe
-    if [[ "$command" == *"|"* ]]; then
-        # Using eval to execute piped commands
-        eval "$command >> gromacs_processing.log 2>&1"
-    else
-        # Execute the command normally
-        $command >> gromacs_processing.log 2>&1
-    fi
+    {
+        echo -e "\n=== [$protein] $message ==="
+        echo "Command: $command"
+    } >> "$log_file"
 
-    if [ $? -ne 0 ]; then
-        echo "Error executing: $command"
-        exit 1
-    fi  
+    if [[ "$command" == *"|"* ]]; then
+        eval "$command" >> "$log_file" 2>&1
+    else
+        $command >> "$log_file" 2>&1
+    fi
 }
 
 echo "Processing with GROMACS..."
-echo "(writing progress/errors to gromacs_processing.log)"
+echo "(writing progress/errors to $log_file)"
 
 # pdb2gmx
-run_gmx_command "echo -e \"1\n1\" | gmx pdb2gmx -f ${protein}.pdb -o ${protein}_noSolvent.gro -ignh" \
+run_gmx_command "echo -e \"1\n1\" | gmx pdb2gmx -f ${protein}.pdb -o ${protein}_noSolvent.gro -ignh -p ${topol_file}" \
     "Creating topology file (topol.top) and GROMACS coordinate file (.gro) from the pdb file using a force field. If using a custom force field file, place the force field folder in the working directory."
-
-# Remove the old log file if it exists and create a new empty one
-[ -f gromacs_processing.log ] && rm gromacs_processing.log
-touch gromacs_processing.log
 
 # editconf
 run_gmx_command "gmx editconf -f ${protein}_noSolvent.gro -o ${protein}_newbox.gro -c -d 1.0 -bt triclinic" \
     "Setting the size of the simulation box..."
 
 # solvate
-run_gmx_command "gmx solvate -cp ${protein}_newbox.gro -cs tip4p -o ${protein}_solv.gro -p topol.top" \
+run_gmx_command "gmx solvate -cp ${protein}_newbox.gro -cs tip4p -o ${protein}_solv.gro -p ${topol_file}" \
     "Adding water molecules to the simulation box..."
 
 # add_ions (two commands)
-run_gmx_command "gmx grompp -f ions.mdp -c ${protein}_solv.gro -p topol.top -o ions.tpr" \
+run_gmx_command "gmx grompp -f ions.mdp -c ${protein}_solv.gro -p ${topol_file} -o ions.tpr" \
     "Adding ions to the simulation box. First reading the instructions from ions.mdp and processing all the interactions..."
-run_gmx_command "echo 13 | gmx genion -s ions.tpr -o ${protein}_processed.gro -p topol.top -pname NA -nname CL -neutral" \
+run_gmx_command "echo 13 | gmx genion -s ions.tpr -o ${protein}_processed.gro -p ${topol_file} -pname NA -nname CL -neutral" \
     "Now we add in the ions... Selecting SOL to replace the SOL (i.e. water) atoms with ions."
 
 # convert from .gro back to .pdb
-run_gmx_command "gmx grompp -f ions.mdp -c ${protein}_processed.gro -p topol.top -o ${protein}_processed.tpr" \
+run_gmx_command "gmx grompp -f ions.mdp -c ${protein}_processed.gro -p ${topol_file} -o ${protein}_processed.tpr" \
     "Getting a .tpr file so we can convert the processed file from .gro back to .pdb..."
 run_gmx_command "echo 0 | gmx trjconv -f ${protein}_processed.gro -s ${protein}_processed.tpr -o ${protein}_processed.pdb" \
     "Converting the processed .gro file back to .pdb format..."
