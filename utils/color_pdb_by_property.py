@@ -29,12 +29,12 @@ def parse_args():
                    default=['PC1','PC2','PC3','Fdewet_pred','water_potential'],
                    help='property column(s) to map onto B-factors '
                         '(default: PC1 PC2 PC3 Fdewet_pred)')
-    p.add_argument('--minWaters', type=float, default=7,
+    p.add_argument('--minWaters', type=float, default=5,
                    help='Only colour groups with avg_n_waters >= this value')
     p.add_argument('-o','--outdir', default='results',
                    help='directory for coloured PDBs (default: results)')
-    p.add_argument('--pad', type=float, default=-100.0,
-                   help='B-factor for atoms not in any selection (default: -100)')
+    p.add_argument('--pad', type=float, default=-999.0,
+                   help='B-factor for atoms not in any selection (default: -999)')
     return p.parse_args()
 
 def main():
@@ -80,14 +80,6 @@ def main():
         for _,row in df.iterrows():
             sel = row['MDAnalysis_selection_strings']
             val = row[prop] if prop != 'water_potential' else row['U_pw'] # accepting both names
-
-            if prop in ['water_potential','U_pw']:
-                # divide by avg_n_waters to get per-water potential since it's more visually meaningful
-                if 'avg_n_waters' in row:
-                    val /= row['avg_n_waters']
-                else:
-                    print(f'Warning – no avg_n_waters for selection "{sel}".')
-                    continue
 
             atoms = u.select_atoms(sel)
             if len(atoms) == 0:

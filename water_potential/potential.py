@@ -94,8 +94,8 @@ def main():
     parser.add_argument("--groupNum", type=int)
     parser.add_argument("-t","--time", type=float, default=5.0,
                         help="Last X ns to analyse (default 5)")
-    parser.add_argument("--skip", type=int, default=50,
-                        help="Frame stride (default 50; reduce for better confidence bars)")
+    parser.add_argument("--skip", type=int, default=100,
+                        help="Frame stride (default 100; reduce for better esimate of mean)")
     parser.add_argument("--nogpu", action="store_true",
                         help="Force CPU platform")
     parser.add_argument("--cutoff", type=float, default=4.25,

@@ -11,7 +11,7 @@ import sys
 parser = argparse.ArgumentParser(description='Run a NPT simulation from a processed protein file.')
 parser.add_argument('protein', help='Name of the processed protein structure file (.pdb) for the simulation job, e.g. myProtein_processed.pdb')
 parser.add_argument('topol', help='Name of the Gromacs topology file (.top) for the simulation job, e.g. topol.top')
-parser.add_argument('-ns','--nanoseconds',default=5,type=float,help='Time in ns you wish to simulate.')
+parser.add_argument('-ns','--nanoseconds',default=1,type=float,help='Time in ns you wish to simulate.')
 parser.add_argument('-r','--restrain',action='store_true',help='Restrain heavy atoms of protein.')
 parser.add_argument('--random_seed',default=42,type=int,help='Random seed for the simulation.')
 parser.add_argument('-o','--output',type=str,help='Output trajectory file name (.dcd), will default to {protein_name}_traj.dcd')

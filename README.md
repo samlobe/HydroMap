@@ -4,7 +4,7 @@ Modeling water-protein interactions to map a protein's water structure, water-pr
 
 <img src="images/SARS2_before_vs_after.png" width="600" align="center" alt="Uncolored pdb input vs colored pdb output">
 
-This analysis takes <10 min of computation for a 100 residue protein, including ~8 min for a 5ns MD simulation on a GPU (NVIDIA RTX 3090 Ti) and <2 min to process each residue on 30 CPU processors (Intel CoreTM i9-14900K with 1 processor per solvated residue / custom group). This time can be reduced depending on your confidence interval tolerance.  
+This analysis takes <1.5 min of computation for a 100 residue protein, including ~45 seconds for a 500 ps MD simulation on a GPU (NVIDIA RTX 3090 Ti) and ~25 seconds to process each residue on 30 CPU processors (Intel CoreTM i9-14900K with 1 processor per solvated residue / custom group). The simulation can be extended to model how conformation changes affect hydrophobicity.  
 
 ---
 
@@ -18,7 +18,7 @@ This analysis takes <10 min of computation for a 100 residue protein, including 
 
 ---
 
-## Procedure summary:
+## Procedure summary
 
 1. Use OpenMM to ***run a short MD simulation*** (GPU recommended)
 2. Measure ***water angles*** and **water-protein potentials** for each residue/group (parallel CPUs recommended)
@@ -57,6 +57,42 @@ From the `water_triplets` subdirectory, run:
 
 5. Molecular Visualization setup:  
 We recommend installing [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.html) or [Pymol](https://pymol.org/) to visualize the dewetting free energy prediction or water structure of your protein.
+
+---
+
+## Examples:
+To do the full procedure (MD simulation, measure water angles/potentials, process and apply $F_{dewet}$ model), simply place your pdb (e.g. example_protein.pdb) in the main directory and do one of the following:
+- `bash examples/procedure_singleChain_allRes.sh`
+  - analyzes each residue in example_protein.pdb and outputs all properties (predicted $F_{dewet}$, PC1, PC2, PC3, water-residue enthalpy) to the results directory (csv & pdbs with property in bfactor column)
+- `bash examples/procedure_multiChain_allRes.sh`
+  - does the same analysis for a multi-chain protein (e.g. multiChain_protein.pdb), anayzing each residue on each chain separately
+- `bash examples/procedure_customGroups.sh example_protein`
+  - analyzes custom groups of your protein as defined in a text file (e.g.customGroups_example_protein.txt) and outputs their water triplet distribution principal component values (see PC definition [here](https://doi.org/10.1021/acs.jpcb.3c00826))
+
+You can modify these scripts to change the input protein, the simulation length, the outputted properties, to toggle restraints, etc.
+
+---
+
+## How to color the outputted pdbs
+
+### With ChimeraX:
+- open the outputted pdb and `show surfaces`
+  - alternatively `hide cartoons`, `show atoms`, `style sphere` if you prefer spheres
+- `color bfactor range 7,3.5 palette lipophilicity; color @@bfactor<-998 black`
+  - 3.5 and 7 are the min and max values of the property (pick this based on the outputted histograms in Step 4)
+  - colors all the "unsolvated" residues black (bfactor set to -999)
+- Go to `Tools -> Depiction -> Color Key` to add a key, e.g. 2.5 kJ/mol; 7 kJ/mol.  
+`2dlab text "<property_description>"` to make a label which you can drag by selecting "Move Label" in the Right Mouse tab.
+
+### With Pymol:
+- open the outputted pdb and `show surface` (or `show spheres`)
+- `spectrum b, red_white_blue, minimum=3.5, maximum=7; color black, b<-998`  
+
+Here are min/max values and ChimeraX palettes we like for PC1, PC2, PC3, and residue-water potential (per water):
+- PC1:  `color bfactor range -8,8 palette red-white-blue; color @@bfactor<-998 black`
+- PC2:  `color bfactor range -2,8 palette cyanmaroon; color @@bfactor<-998 black`
+- PC3:  `color bfactor range 2,-2 palette lipophilicity; color @@bfactor<-998 black`
+- water_potential: `color bfactor range -50,-200 palette red-white-blue; color @@bfactor<-998 black`
 
 ---
 
@@ -114,11 +150,11 @@ We recommend installing [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.ht
     - `python run_potentials_parallel.py myProtein.pdb traj.dcd --top topol.top --nprocs 8` to analyze all residues in the original pdb across 8 parallel processors; ideal if CPUs are available and cheap. Add `--multiChain` if you want to analyze each residue on each chain of your pdb file.
     - `python run_potentials_serial.py myProtein.pdb traj.dcd --top topol.top` to serially analyze all residues on a GPU; ideal if you don't have many CPU processors available
     - `python run_potentials_parallel.py myProtein.pdb traj.dcd --top topol.top --nprocs 8 --groupsFile groups_file.txt` to analyze each custom group in groups_file.txt (one per line) across 8 CPU processors
-- **process_and_predict.py
+- **utils/process_and_predict.py**
   - Example Usage:
     - `python process_and_predict.py example_protein.pdb --anglesDir angles --potentialsDir potentials --model models/Fdewet.joblib --outdir results` to process angles/potentials and predict dewetting free energy with main model (for a99SBdisp)
     - `python process_and_predict.py example_protein.pdb --anglesDir angles --potentialsDir potentials --model models/Fdewet_isolated_aa_multi_forcefield.joblib --outdir results` to predict using alternative dewetting free energy model (trained on isolated amino acids for a99SBdisp, a03ws, and C36m)
-- **color_pdb_by_property.py**
+- **utils/color_pdb_by_property.py**
   - Example Usage:
     - `python color_pbd_by_property.py results/example_protein_results.csv --outdir results` to output all one pdb per property (predicted Fdewet, protein-water potential per water, PC1, PC2, PC3) with property values in the bfactor column of the pdb.
     - `python color_pdb_by_property.py results/example_protein_results.csv --properties PC1 --minWaters 3` to color based on just PC1 and to not color groups that had fewer than 3 hydration waters on average within 4.25 angstroms of any group atom (bfactor will be marked as -100)
@@ -130,29 +166,13 @@ We recommend installing [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.ht
 - water_triplets/waterlib.c
   - Compiled by setup.py (see above) to build an executable that is called by triplet.py to efficiently measure water angles
 - utils/get_PCs.py
-  - Called by analyze_groups.py to convert water triplet distributions to dewetting free energy predictions and principal component contributions.
+  - Called by process_and_predict.py to convert water triplet distributions to dewetting free energy predictions and principal component contributions.
 - data/principalComps.csv
   - Read by get_PCs.py 
 - data/bulk_water_triplets.csv
   - Read by get_PCs.py
     
 ---
-
-## How to color the outputted pdbs
-
-### With ChimeraX:
-- open the outputted pdb and `show surfaces`
-  - alternatively `hide cartoons`, `show atoms`, `style sphere` if you prefer spheres
-- `color bfactor range 2.5,7 palette red-white-blue; color @@bfactor<-99 black`
-  - 2.5 and 7 are the min and max values of the property (pick this based on the outputted histograms in Step 4)
-  - colors all the "unsolvated" residues black (bfactor set to -100)
-- Go to `Tools -> Depiction -> Color Key` to add a key, e.g. 2.5 kJ/mol; 7 kJ/mol.  
-`2dlab text "<property_description>"` to make a label which you can drag by selecting "Move Label" in the Right Mouse tab.
-
-### With Pymol:
-- open the outputted pdb and `show surface` (or `show spheres`)
-- `spectrum b, red_white_blue, minimum=2.5, maximum=7; color black, b<-99`
-
 ## Acknowledgements:
 [Shell Lab](https://theshelllab.org) and [Shea Group](https://labs.chem.ucsb.edu/shea/joan-emma/);  
 [UCSB CNSI](https://www.cnsi.ucsb.edu/) from computing resources;  
