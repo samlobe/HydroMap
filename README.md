@@ -4,7 +4,7 @@ Modeling water-protein interactions to map a protein's water structure, water-pr
 
 <img src="images/SARS2_before_vs_after.png" width="600" align="center" alt="Uncolored pdb input vs colored pdb output">
 
-This analysis takes <1.5 min of computation for a 100 residue protein, including ~45 seconds for a 500 ps MD simulation on a GPU (NVIDIA RTX 3090 Ti) and ~25 seconds to process each residue on 30 CPU processors (Intel CoreTM i9-14900K with 1 processor per solvated residue / custom group). The simulation can be extended to model how conformation changes affect hydrophobicity.  
+This analysis takes <1.5 min of computation for a 100 residue protein, including ~45 seconds for a 500 ps MD simulation on a GPU (NVIDIA RTX 3090 Ti) and ~25 seconds to process each residue on 30 CPU processors (Intel CoreTM i9-14900K with 1 processor per solvated residue / custom group). 
 
 ---
 
@@ -96,7 +96,7 @@ Here are min/max values and ChimeraX palettes we like for PC1, PC2, PC3, and res
 
 ---
 
-## Main Code:  
+## Main Code  
 - **process_with_gromacs.sh**
   - Usage: `bash process_with_gromacs.sh myProtein.pdb`
   - Outputs: topology file ('topol.top') and your solvated, neutralized system ('myProtein_processed.pdb')
@@ -159,8 +159,7 @@ Here are min/max values and ChimeraX palettes we like for PC1, PC2, PC3, and res
     - `python color_pbd_by_property.py results/example_protein_results.csv --outdir results` to output all one pdb per property (predicted Fdewet, protein-water potential per water, PC1, PC2, PC3) with property values in the bfactor column of the pdb.
     - `python color_pdb_by_property.py results/example_protein_results.csv --properties PC1 --minWaters 3` to color based on just PC1 and to not color groups that had fewer than 3 hydration waters on average within 4.25 angstroms of any group atom (bfactor will be marked as -100)
 
-
-## Supporting Code:
+## Supporting Code
 - remove_checkpointed_duplicates.py
   - Called by simulate_with_openmm.py when a simulation is restarted from a checkpoint in order to clean up duplicate frames.
 - water_triplets/waterlib.c
@@ -173,7 +172,7 @@ Here are min/max values and ChimeraX palettes we like for PC1, PC2, PC3, and res
   - Read by get_PCs.py
     
 ---
-## Acknowledgements:
+## Acknowledgements
 [Shell Lab](https://theshelllab.org) and [Shea Group](https://labs.chem.ucsb.edu/shea/joan-emma/);  
 [UCSB CNSI](https://www.cnsi.ucsb.edu/) from computing resources;  
 [Patel Group](https://patelgroup.seas.upenn.edu/) for [INDUS](https://github.com/patellab511/indus) technique used when fitting hydrophobicity model;  
