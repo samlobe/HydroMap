@@ -228,7 +228,7 @@ print(f"We recommend visualizing your trajectory (e.g. with Pymol or ChimeraX or
 
 # clean up the duplicate frames from the trajectory and energies log if a checkpoint was used
 if remove_duplicates:
-    print(f'\nRemoving duplicate frames in {args.output} and duplicate entries in {energies_file}...')
+    print(f'\nRemoving duplicate frames in {traj_name} and duplicate entries in {energies_file}...')
     import subprocess
     subprocess.run(["python", "remove_checkpointed_duplicates.py",protein_file,energies_file, traj_name])
 
