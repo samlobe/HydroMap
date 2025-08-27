@@ -31,6 +31,27 @@ def run_cmd(cmd):
         return False, cmd, ret.stderr.decode()
     return True, cmd, ""
 
+def residue_key(res):
+    """
+    Deterministic sort key and token for residues with insertion codes.
+    Returns (sort_tuple, res_token, segid_str)
+    sort_tuple ensures plain number < 'A' < 'B' < ...
+    """
+    rid   = int(getattr(res, "resid", res.resid))
+    icode = (getattr(res, "icode", "") or "").upper()
+    # segid usually mirrors chainID for PDB; derive from chainIDs if empty
+    segid = (getattr(res, "segid", "") or "").strip()
+    if not segid:
+        try:
+            chain_ids = np.unique(res.atoms.chainIDs)
+            if len(chain_ids) == 1:
+                segid = str(chain_ids[0]).strip()
+        except Exception:
+            segid = ""
+    sort_key = (rid, "" if icode == "" else icode)
+    token    = f"{rid}{icode}"  # e.g. '112', '112A'
+    return sort_key, token, segid
+
 if __name__ == "__main__":
     multiprocessing.set_start_method("spawn", force=True)
 
@@ -88,37 +109,38 @@ if __name__ == "__main__":
                       "--groupsFile", args.groupsFile, "--groupNum", str(i+1),
                       "-t", str(args.time),
                       "--hydrationCutoff", str(args.hydrationCutoff),
-                        "--skip", str(args.skip),
+                      "--skip", str(args.skip),
                       "--outdir", args.outdir])
             for i in range(len(groups))
         ]
 
     elif args.multiChain:
-        resids = u.residues.resids
-        segids = u.residues.segids
-        work_items = [
-            dict(kind="residue",
-                 cmd=["python", str(TRIPLET_PATH), processed_pdb_path, args.trajectory,
-                      "-res", str(rid), "-ch", str(sid),
-                      "-t", str(args.time),
-                      "--hydrationCutoff", str(args.hydrationCutoff),
-                      "--skip", str(args.skip),
-                      "--outdir", args.outdir])
-            for rid, sid in zip(resids, segids)
-        ]
+        # sort residues deterministically by (resid, icode)
+        residues = sorted(u.residues, key=lambda r: residue_key(r)[0])
+        work_items = []
+        for res in residues:
+            _, res_token, segid = residue_key(res)
+            cmd = ["python", str(TRIPLET_PATH), processed_pdb_path, args.trajectory,
+                   "-res", str(res_token),
+                   "-ch", str(segid),
+                   "-t", str(args.time),
+                   "--hydrationCutoff", str(args.hydrationCutoff),
+                   "--skip", str(args.skip),
+                   "--outdir", args.outdir]
+            work_items.append(dict(kind="residue", cmd=cmd))
 
-    else:  # single‑chain residue mode
-        resids = u.residues.resids
-        work_items = [
-            dict(kind="residue",
-                 cmd=["python", str(TRIPLET_PATH), processed_pdb_path, args.trajectory,
-                      "-res", str(rid),
-                      "-t", str(args.time),
-                      "--hydrationCutoff", str(args.hydrationCutoff),
-                      "--skip", str(args.skip),
-                      "--outdir", args.outdir])
-            for rid in resids
-        ]
+    else:  # single-chain residue mode (still include insertion codes)
+        residues = sorted(u.residues, key=lambda r: residue_key(r)[0])
+        work_items = []
+        for res in residues:
+            _, res_token, segid = residue_key(res)
+            cmd = ["python", str(TRIPLET_PATH), processed_pdb_path, args.trajectory,
+                   "-res", str(res_token),
+                   "-t", str(args.time),
+                   "--hydrationCutoff", str(args.hydrationCutoff),
+                   "--skip", str(args.skip),
+                   "--outdir", args.outdir]
+            work_items.append(dict(kind="residue", cmd=cmd))
 
     total_jobs = len(work_items)
     print(f"Preparing {total_jobs} triplet jobs "

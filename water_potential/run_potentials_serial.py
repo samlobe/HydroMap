@@ -14,13 +14,12 @@ import numpy as np
 import MDAnalysis as mda
 from pathlib import Path
 
-SCRIPT_DIR   = Path(__file__).resolve().parent
+SCRIPT_DIR     = Path(__file__).resolve().parent
 POTENTIAL_PATH = SCRIPT_DIR / "potential.py"      # => /full/path/to/potential.py
 # throw error if potential.py is not found in the same directory as this script
 if not POTENTIAL_PATH.exists():
     sys.exit(f"ERROR: cannot find potential.py in {SCRIPT_DIR}. "
              "Please put potential.py and run_potentials_serial.py are in the same directory.")
-
 
 def run_cmd(cmd):
     """Run a shellless subprocess and return (returncode, cmd, stderr string)."""
@@ -28,6 +27,25 @@ def run_cmd(cmd):
     if ret.returncode != 0:
         return False, cmd, ret.stderr.decode()
     return True, cmd, ""
+
+def residue_key(res):
+    """
+    Deterministic key/token for residues with insertion codes.
+    Returns (sort_tuple, res_token, segid_str)
+    """
+    rid   = int(getattr(res, "resid", res.resid))
+    icode = (getattr(res, "icode", "") or "").upper()
+    segid = (getattr(res, "segid", "") or "").strip()
+    if not segid:
+        try:
+            chain_ids = np.unique(res.atoms.chainIDs)
+            if len(chain_ids) == 1:
+                segid = str(chain_ids[0]).strip()
+        except Exception:
+            segid = ""
+    sort_key = (rid, "" if icode == "" else icode)   # plain number first, then A<B<C...
+    token    = f"{rid}{icode}"                        # e.g., '112', '112A'
+    return sort_key, token, segid
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -70,7 +88,7 @@ if __name__ == "__main__":
 
     protein_name = os.path.splitext(os.path.basename(pdb_path))[0]
 
-    # parse the groups
+    # parse the groups / residues
     u = mda.Universe(pdb_path)
 
     if args.groupsFile:
@@ -79,42 +97,47 @@ if __name__ == "__main__":
         work_items = [
             dict(kind="group",
                  cmd=["python", str(POTENTIAL_PATH), processed_pdb_path, args.trajectory,
+                      "--top", args.top,
                       "--groupsFile", args.groupsFile, "--groupNum", str(i+1),
                       "-t", str(args.time),
                       "--skip", str(args.skip),
-                      "--cutoff", str(args.cutoff)]
+                      "--cutoff", str(args.cutoff),
+                      "--outdir", str(args.outdir)]
                  + (["--nogpu"] if args.nogpu else []))
             for i in range(len(groups))
         ]
 
     elif args.multiChain:
-        resids = u.residues.resids
-        segids = u.residues.segids
-        work_items = [
-            dict(kind="residue",
-                 cmd=["python", str(POTENTIAL_PATH), processed_pdb_path, args.trajectory,
-                      "--top", args.top,
-                      "-res", str(rid), "-ch", str(sid),
-                      "-t", str(args.time),
-                      "--skip", str(args.skip),
-                      "--cutoff", str(args.cutoff)]
-                 + (["--nogpu"] if args.nogpu else []))
-            for rid, sid in zip(resids, segids)
-        ]
+        residues = sorted(u.residues, key=lambda r: residue_key(r)[0])
+        work_items = []
+        for res in residues:
+            _, res_token, segid = residue_key(res)
+            cmd = ["python", str(POTENTIAL_PATH), processed_pdb_path, args.trajectory,
+                   "--top", args.top,
+                   "-res", str(res_token), "-ch", str(segid),
+                   "-t", str(args.time),
+                   "--skip", str(args.skip),
+                   "--cutoff", str(args.cutoff),
+                   "--outdir", str(args.outdir)]
+            if args.nogpu:
+                cmd.append("--nogpu")
+            work_items.append(dict(kind="residue", cmd=cmd))
 
-    else:  # single‑chain residue mode
-        resids = u.residues.resids
-        work_items = [
-            dict(kind="residue",
-                 cmd=["python", str(POTENTIAL_PATH), processed_pdb_path, args.trajectory,
-                      "--top", args.top,
-                      "-res", str(rid),
-                      "-t", str(args.time),
-                      "--skip", str(args.skip),
-                      "--cutoff", str(args.cutoff)]
-                 + (["--nogpu"] if args.nogpu else []))
-            for rid in resids
-        ]
+    else:  # single-chain residue mode (still include insertion codes)
+        residues = sorted(u.residues, key=lambda r: residue_key(r)[0])
+        work_items = []
+        for res in residues:
+            _, res_token, _ = residue_key(res)
+            cmd = ["python", str(POTENTIAL_PATH), processed_pdb_path, args.trajectory,
+                   "--top", args.top,
+                   "-res", str(res_token),
+                   "-t", str(args.time),
+                   "--skip", str(args.skip),
+                   "--cutoff", str(args.cutoff),
+                   "--outdir", str(args.outdir)]
+            if args.nogpu:
+                cmd.append("--nogpu")
+            work_items.append(dict(kind="residue", cmd=cmd))
 
     total_jobs = len(work_items)
     print(f"Preparing {total_jobs} jobs measuring potentials (running serially)...\n")

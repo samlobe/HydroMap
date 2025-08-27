@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Compute non‑bonded potential energy between a selected atom *group*
+Compute non-bonded potential energy between a selected atom *group*
 (e.g. one residue) and the solvent.
 
 Outputs a CSV with three columns:
@@ -13,7 +13,7 @@ python potential.py ../protein_processed.pdb ../traj.dcd --top ../topol.top -res
 # Note: this works for a99SBdisp which puts coulombic potential in nonbonded force and lj in custom nonbonded force
 # See OpenMM cookbook on computing interaction energies (https://openmm.github.io/openmm-cookbook/dev/notebooks/cookbook/Computing%20Interaction%20Energies.html)
 
-import os, sys, argparse, time, warnings
+import os, sys, argparse, time, warnings, re
 import numpy as np
 import pandas as pd
 import MDAnalysis as mda
@@ -23,6 +23,36 @@ from openmm import unit, Platform, Context, VerletIntegrator, Vec3
 from openmm.app import PDBFile, GromacsTopFile
 from openmm.unit import nanometer, kilojoule_per_mole, picosecond
 from openmm.app.forcefield import CutoffPeriodic
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module=r".*MDAnalysis\.topology\.PDBParser")
+warnings.filterwarnings("ignore", category=UserWarning, module=r".*MDAnalysis\.topology\.guessers")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module=r".*MDAnalysis\.coordinates\.DCD")
+
+
+# -------- helpers for insertion codes (match triplet.py behavior) --------
+def parse_res_token(tok: str):
+    """
+    Parse residue tokens like '112', '112A', '7c' -> (112, 'A'/'C' or '')
+    """
+    m = re.fullmatch(r'\s*(\d+)\s*([A-Za-z]?)\s*', str(tok))
+    if not m:
+        raise ValueError(f"Invalid residue token: {tok!r} (expected e.g. 112 or 112B)")
+    resseq = int(m.group(1))
+    icode = m.group(2).upper()
+    return resseq, icode
+
+def residue_selection(segid: str, res_token: str):
+    """
+    Build an MDAnalysis selection string for a residue, including insertion code if present.
+    If segid is None/empty, omit it from the selection. (No heavy-atom filter here.)
+    """
+    resseq, icode = parse_res_token(res_token)
+    resid_clause = f"{resseq}{icode}"  # e.g., '112B' or '112'
+    if segid:
+        sel = f"segid {segid} and resid {resid_clause}"
+    else:
+        sel = f"resid {resid_clause}"
+    return sel, resseq, icode
 
 # ----------------------------------------------------------------------
 #  Helper : build OpenMM system & tag forces
@@ -87,7 +117,8 @@ def main():
     parser.add_argument("trajectory", help="trajectory file (e.g. DCD)")
     parser.add_argument("--top", default="topol.top",
                         help="Gromacs topology file (default topol.top)")
-    parser.add_argument("-res","--resid", type=int)
+    parser.add_argument("-res","--resid", type=str,
+                        help="Residue number (optionally with insertion code), e.g., 112 or 112B")
     parser.add_argument("-ch","--chain")
     parser.add_argument("--selection", help="Raw MDAnalysis selection string")
     parser.add_argument("--groupsFile")
@@ -122,8 +153,18 @@ def main():
         with open(args.groupsFile) as fh:
             sel_str = fh.readlines()[args.groupNum-1].strip()
     elif args.resid is not None:
-        sel_str = (f"resid {args.resid} and segid {args.chain}"
-                   if args.chain else f"resid {args.resid}")
+        # Build selection supporting insertion codes; fallback to chainID if needed
+        sel_str, resseq, icode = residue_selection(args.chain, args.resid)
+        if len(u.select_atoms(sel_str)) == 0:
+            resid_clause = f"{resseq}{icode}"
+            if args.chain:
+                sel_try = f'chainID {args.chain} and resid {resid_clause}'
+                if len(u.select_atoms(sel_try)) > 0:
+                    sel_str = sel_try
+                else:
+                    sys.exit(f"ERROR: selection returned zero atoms – tried '{sel_str}' and '{sel_try}'.")
+            else:
+                sys.exit(f"ERROR: selection returned zero atoms – tried '{sel_str}'.")
     else:
         sys.exit("ERROR: need --selection OR --groupsFile/--groupNum OR -res")
 
@@ -223,7 +264,7 @@ def main():
         "coulomb": coul_list,
         "lj":      lj_list,
         "total":   total_arr,
-        "n_waters": nwaters_list
+        "n_waters": n_within_cutoff if len(nwaters_list)==0 else nwaters_list
     })
     df.to_csv(out_csv, index=False)
     print(f"\nSaved energies from {len(df)} frames of the MD simulation to {out_csv}")
@@ -231,4 +272,3 @@ def main():
 # ----------------------------------------------------------------------
 if __name__ == "__main__":
     main()
-

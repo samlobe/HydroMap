@@ -18,7 +18,7 @@ Only colour by Fdewet_pred:
 python color_by_property.py myProtein.pdb myProtein_results.csv \
         --properties Fdewet_pred
 """
-import argparse, os, sys
+import argparse, os, sys, re
 import numpy as np, pandas as pd, MDAnalysis as mda
 
 def parse_args():
@@ -36,6 +36,14 @@ def parse_args():
     p.add_argument('--pad', type=float, default=-999.0,
                    help='B-factor for atoms not in any selection (default: -999)')
     return p.parse_args()
+
+def select_with_fallback(u, sel):
+    """Try selection; if 0 atoms and it used segid, retry with chainID."""
+    ag = u.select_atoms(sel)
+    if len(ag) == 0 and 'segid' in sel:
+        sel2 = re.sub(r'\bsegid\b', 'chainID', sel)
+        ag = u.select_atoms(sel2)
+    return ag
 
 def main():
     a = parse_args()
@@ -55,7 +63,6 @@ def main():
         before = len(df)
         df = df[df['avg_n_waters'] >= a.minWaters]
         print(f"Filtered groups: kept {len(df)}/{before} entries with >= {a.minWaters} avg hydration waters (within 4.25A of selection).")
-
 
     # if water_potential in properties, rename to U_pw
     if 'water_potential' in a.properties:
@@ -79,9 +86,9 @@ def main():
         # assign property to requested selections
         for _,row in df.iterrows():
             sel = row['MDAnalysis_selection_strings']
-            val = row[prop] if prop != 'water_potential' else row['U_pw'] # accepting both names
+            val = row[prop] if prop != 'water_potential' else row['U_pw']  # accepting both names
 
-            atoms = u.select_atoms(sel)
+            atoms = select_with_fallback(u, sel)
             if len(atoms) == 0:
                 print(f'Warning – selection "{sel}" matched 0 atoms.')
                 continue

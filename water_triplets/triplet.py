@@ -5,6 +5,13 @@ import MDAnalysis as mda
 from tqdm import tqdm
 import sys, os, argparse, shutil
 from glob import glob
+import re
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module=r".*MDAnalysis\.topology\.PDBParser")
+warnings.filterwarnings("ignore", category=UserWarning, module=r".*MDAnalysis\.topology\.guessers")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module=r".*MDAnalysis\.coordinates\.DCD")
+
+
 try:
     import waterlib as wl
 except ImportError:
@@ -15,14 +22,42 @@ except ImportError:
         "Make sure waterlib.c exists in the same directory as triplet.py.\n"
     )
 
+# -------- helpers for insertion codes --------
+def parse_res_token(tok: str):
+    """
+    Parse residue tokens like '112', '112A', '7c' -> (112, 'A'/'C' or '')
+    """
+    m = re.fullmatch(r'\s*(\d+)\s*([A-Za-z]?)\s*', str(tok))
+    if not m:
+        raise ValueError(f"Invalid residue token: {tok!r} (expected e.g. 112 or 112B)")
+    resseq = int(m.group(1))
+    icode = m.group(2).upper()
+    return resseq, icode
 
+def residue_selection(segid: str, res_token: str, heavy_only=True):
+    """
+    Build an MDAnalysis selection string for a residue, including insertion code if present.
+    If segid is None/empty, omit it from the selection.
+    """
+    resseq, icode = parse_res_token(res_token)
+    resid_clause = f"{resseq}{icode}"  # e.g., '112B' or '112'
+    if segid:
+        sel = f"segid {segid} and resid {resid_clause}"
+    else:
+        sel = f"resid {resid_clause}"
+    if heavy_only:
+        sel += " and not name H*"
+    return sel, resseq, icode
+
+# -------- CLI --------
 parser = argparse.ArgumentParser(
     description=("Compile water triplet angles around the residue/"
                  "custom group in your protein.\n"
                  "Example: python triplet.py protein_processed.pdb traj.dcd -res 42"))
 parser.add_argument('protein')
 parser.add_argument('trajectory')
-parser.add_argument('-res','--resid', type=int)
+parser.add_argument('-res','--resid', type=str,  # allow tokens like 112B
+                    help='Residue number (optionally with insertion code), e.g., 112 or 112B')
 parser.add_argument('-ch','--chain')
 parser.add_argument('-t','--time',   type=float, default=5.0,
                     help='Last x ns to analyse (default 5)')
@@ -51,8 +86,11 @@ if args.selection:
     out_base = f'{protein_name}_{group_string}'
 elif args.groupsFile and args.groupNum:
     out_base = f'{protein_name}_group{args.groupNum}'
-elif args.chain:
+elif args.resid is not None and args.chain:
+    # include insertion code in filename if present (args.resid is a string token, e.g. '112B')
     out_base = f'{protein_name}_res{args.resid}_chain{args.chain}'
+elif args.resid is not None:
+    out_base = f'{protein_name}_res{args.resid}'
 else:
     out_base = f'{protein_name}_res{args.resid}'
 
@@ -77,8 +115,19 @@ elif args.groupsFile and args.groupNum is not None:
     with open(args.groupsFile) as fh:
         sel = fh.readlines()[args.groupNum-1].strip()
 elif args.resid is not None:
-    sel = (f'resid {args.resid} and segid {args.chain} and not name H*'
-           if args.chain else f'resid {args.resid} and not name H*')
+    # Build selection supporting insertion codes; fallback to chainID if needed
+    sel, resseq, icode = residue_selection(args.chain, args.resid, heavy_only=True)
+    if len(u.select_atoms(sel)) == 0:
+        # Optional fallback if topology exposes chainID but not segid
+        resid_clause = f"{resseq}{icode}"
+        if args.chain:
+            sel_try = f'chainID {args.chain} and resid {resid_clause} and not name H*'
+            if len(u.select_atoms(sel_try)) > 0:
+                sel = sel_try
+            else:
+                sys.exit(f"Your atom selection picked zero atoms – tried '{sel}' and '{sel_try}'.")
+        else:
+            sys.exit(f"Your atom selection picked zero atoms – tried '{sel}'.")
 else:
     sys.exit("Error: must specify -res/-ch, --groupsFile/--groupNum, or --selection")
 
@@ -142,5 +191,4 @@ with open(output_path, 'a') as out_f:
         if write_idx % 500 == 0:
             out_f.flush()
 
-
-print(f"Done! Angles in {output_path}")
+print(f"Done! Angles in {output_path}")

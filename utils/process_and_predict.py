@@ -66,6 +66,41 @@ def flat_angles(path):
     flat=np.array([a for sub in per_frame for a in sub])
     return flat, len(flat)/len(per_frame)
 
+# ---- helpers to deal with insertion codes consistently ----
+def residue_key(res):
+    """Return a deterministic sort key and the token/segid for a residue (with insertion code)."""
+    rid   = int(getattr(res, "resid", res.resid))
+    icode = (getattr(res, "icode", "") or "").upper()
+    segid = (getattr(res, "segid", "") or "").strip()
+    if not segid:
+        try:
+            chain_ids = np.unique(res.atoms.chainIDs)
+            if len(chain_ids) == 1:
+                segid = str(chain_ids[0]).strip()
+        except Exception:
+            segid = ""
+    token = f"{rid}{icode}"          # e.g., '112', '112A'
+    sortk = (rid, "" if icode == "" else icode)
+    return sortk, token, segid
+
+def build_residue_records(u, multi_chain=False):
+    """
+    Enumerate residues in a deterministic order and return a list of dicts:
+      {
+        'sel':   "resid 112A and segid A"  (or "resid 112A" if not multi_chain)
+        'token': "112A",
+        'segid': "A" or ""
+      }
+    """
+    # residues = sorted(u.residues, key=lambda r: residue_key(r)[0]) 
+    residues = list(u.residues) # we will keep in the original order since sometimes antibody software has weird numbering
+    recs = []
+    for r in residues:
+        _, token, segid = residue_key(r)
+        sel = f"resid {token} and segid {segid}" if multi_chain else f"resid {token}"
+        recs.append({"sel": sel, "token": token, "segid": segid})
+    return recs
+
 def main():
     a=parse_args(); os.makedirs(a.outdir, exist_ok=True)
 
@@ -86,38 +121,50 @@ def main():
 
     u=mda.Universe(pdb)
 
+    # Build the list of "groups" (selection strings) and residue records
     if a.groupsFile:
         with open(a.groupsFile) as fh:
             groups=[ln.strip() for ln in fh if ln.strip() and not ln.startswith('#')]
-    elif a.multiChain:
-        groups=[f'resid {r} and segid {s}' for r,s in zip(u.residues.resids,u.residues.segids)]
+        recs = None  # not used when groupsFile is provided
     else:
-        groups=[f'resid {r}' for r in u.residues.resids]
+        recs = build_residue_records(u, multi_chain=a.multiChain)
+        groups = [rec["sel"] for rec in recs]
 
-    # angles
+    # -------------------- angles --------------------
     hrows = []
+    groups_kept = []  # keep only those for which files exist
     for i,group in enumerate(tqdm(groups,desc='Angles')):
-        residue = u.residues[i]
-        resid = residue.resid
-        segid = residue.segid.strip()
-
-        tag=f'group{i+1}' if a.groupsFile else None
-        path=( f'{a.anglesDir}/{prot}_{tag}_angles.txt' if tag else
-               (f'{a.anglesDir}/{prot}_res{resid}_chain{segid}_angles.txt'
-                if a.multiChain else
-                f'{a.anglesDir}/{prot}_res{resid}_angles.txt') )
-        if not os.path.exists(path): warnings.warn(f'{path} missing'); continue
+        if a.groupsFile:
+            tag = f'group{i+1}'
+            path = f'{a.anglesDir}/{prot}_{tag}_angles.txt'
+        else:
+            token = recs[i]["token"]
+            segid = recs[i]["segid"]
+            if a.multiChain:
+                path = f'{a.anglesDir}/{prot}_res{token}_chain{segid}_angles.txt'
+            else:
+                path = f'{a.anglesDir}/{prot}_res{token}_angles.txt'
+        if not os.path.exists(path):
+            warnings.warn(f'{path} missing'); continue
         flat,_=flat_angles(path)
-        if mask is not None: flat=flat[mask[:len(flat)]]
+        if mask is not None: flat=flat[:np.count_nonzero(mask[:len(flat)])] if mask.ndim==1 else flat
         hrows.append(histo_line(flat))
+        groups_kept.append(group)
 
-    hist_df=pd.DataFrame(hrows,index=groups,columns=BIN_MIDS)
-    hist_df['MDAnalysis_selection_strings']=groups
+    if not hrows:
+        sys.exit("No angle files found; nothing to process.")
+
+    hist_df=pd.DataFrame(hrows,index=groups_kept,columns=BIN_MIDS)
+    hist_df['MDAnalysis_selection_strings']=groups_kept
 
     # add 10-degree bins needed by model
     for rng in [(40,50),(140,150)]:
         c1,f1=f'{rng[0]+2.5:.1f}', f'{rng[0]+7.5:.1f}'
-        hist_df[f'{rng[0]}-{rng[1]}_tri']=hist_df[c1]+hist_df[f1]
+        # If these bins are outside our BIN_MIDS (shouldn't be), guard with get
+        if c1 in hist_df.columns and f1 in hist_df.columns:
+            hist_df[f'{rng[0]}-{rng[1]}_tri']=hist_df[c1]+hist_df[f1]
+        else:
+            hist_df[f'{rng[0]}-{rng[1]}_tri']=0.0
 
     # get PCs from triplet angles
     if not os.path.exists('data/bulk_water_triplets.csv'):
@@ -134,31 +181,39 @@ def main():
     pc_df = get_PCs(hist_df, a.forcefield, df_bulk, PCs)
     angles_df=hist_df.drop(columns=['MDAnalysis_selection_strings'])
 
-    # potentials
+    # -------------------- potentials --------------------
     tots,nwats,idx=[],[],[]
-    for i,group in enumerate(tqdm(groups,desc='Potentials')):
-        residue = u.residues[i]
-        resid = residue.resid
-        segid = residue.segid.strip()
-
-        tag=f'group{i+1}' if a.groupsFile else None
-        pot=( f'{a.potentialsDir}/{prot}_{tag}_potentials.csv' if tag else
-              (f'{a.potentialsDir}/{prot}_res{resid}_chain{segid}_potentials.csv'
-               if a.multiChain else
-               f'{a.potentialsDir}/{prot}_res{resid}_potentials.csv') )
-        if not os.path.exists(pot): warnings.warn(f'{pot} missing'); continue
+    for i,group in enumerate(tqdm(groups_kept,desc='Potentials')):
+        if a.groupsFile:
+            tag=f'group{i+1}'
+            pot = f'{a.potentialsDir}/{prot}_{tag}_potentials.csv'
+        else:
+            token = recs[i]["token"]
+            segid = recs[i]["segid"]
+            if a.multiChain:
+                pot = f'{a.potentialsDir}/{prot}_res{token}_chain{segid}_potentials.csv'
+            else:
+                pot = f'{a.potentialsDir}/{prot}_res{token}_potentials.csv'
+        if not os.path.exists(pot):
+            warnings.warn(f'{pot} missing'); continue
         df=pd.read_csv(pot)
-        if mask is not None: df=df[mask[:len(df)]]
+        if mask is not None: df=df[:np.count_nonzero(mask[:len(df)])]
         tots.append(df['total'].mean()); nwats.append(df['n_waters'].mean()); idx.append(group)
+
+    if len(idx)==0:
+        sys.exit("No potential CSVs found; nothing to merge.")
 
     pot_df=pd.DataFrame({'U_pw':tots,'avg_n_waters':nwats},index=idx)
     pot_df['MDAnalysis_selection_strings']=idx
 
+    # -------------------- assemble features --------------------
     features=pd.merge(hist_df,pc_df[['PC1','PC2','PC3']],
                       left_index=True,right_index=True)
     features=pd.merge(features,
                       pot_df.drop(columns=['MDAnalysis_selection_strings']),
                       left_index=True,right_index=True)
+
+    os.makedirs(a.outdir, exist_ok=True)
     features.to_csv(f'{a.outdir}/angles_and_potentials_{prot}.csv', index=False)
 
     if model_name == 'Fdewet_isolated_aa_multi_forcefield.joblib':
@@ -172,7 +227,7 @@ def main():
         else:
             raise ValueError(f'Unknown forcefield {a.forcefield}.')
 
-    # load model
+    # -------------------- load model & predict --------------------
     bundle=joblib.load(a.model)
     if isinstance(bundle, dict):
         mdl    = bundle['model']
