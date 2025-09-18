@@ -9,7 +9,7 @@ python run_triplets_parallel.py protein.pdb traj.dcd -t 5 --nprocs 8
 
 import argparse, os, sys, subprocess, itertools, time
 import multiprocessing
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import numpy as np
@@ -25,11 +25,32 @@ if not TRIPLET_PATH.exists():
 
 #  Worker helper (must be top-level function; enables it to work on both Mac and Linux)
 def run_cmd(cmd):
-    """Run a shellless subprocess and return (returncode, cmd, stderr string)."""
-    ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    """
+    Run a subprocess without buffering its output in RAM.
+    Writes combined stdout/stderr to logs/<short-id>.log
+    Returns (ok, cmd, err_hint).
+    """
+    from hashlib import md5
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
+
+    short = md5(" ".join(cmd).encode()).hexdigest()[:8]
+    log_path = log_dir / f"{short}.log"
+
+    # Clamp threading to avoid oversubscription crashes / stalls
+    env = os.environ.copy()
+    env.setdefault("OMP_NUM_THREADS", "1")
+    env.setdefault("MKL_NUM_THREADS", "1")
+    env.setdefault("OPENBLAS_NUM_THREADS", "1")
+    env.setdefault("NUMEXPR_NUM_THREADS", "1")
+
+    with open(log_path, "w") as lf:
+        ret = subprocess.run(cmd, stdout=lf, stderr=subprocess.STDOUT, env=env)
+
     if ret.returncode != 0:
-        return False, cmd, ret.stderr.decode()
+        return False, cmd, f"exit={ret.returncode} (see {log_path})"
     return True, cmd, ""
+
 
 def residue_key(res):
     """
@@ -150,8 +171,12 @@ if __name__ == "__main__":
     start = time.time()
     fails = []
 
-    with ProcessPoolExecutor(max_workers=args.nprocs) as pool:
-        futures = {pool.submit(run_cmd, w["cmd"]): w for w in work_items}
+    with ThreadPoolExecutor(max_workers=args.nprocs) as pool:
+        futures = {}
+        for w in work_items:
+            futures[pool.submit(run_cmd, w["cmd"])] = w
+            time.sleep(0.1)   # small ramp to prevent a thundering herd
+
         done_so_far = 0
         for fut in as_completed(futures):
             ok, cmd, err = fut.result()
