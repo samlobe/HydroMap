@@ -1,0 +1,2326 @@
+{
+  "format_version": 1,
+  "residues": {
+    "ACE": {
+      "explicit_impropers": []
+    },
+    "ALA": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "ARG": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "ASF": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "ASH": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "ASN": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "ASP": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CA": {
+      "explicit_impropers": []
+    },
+    "CALA": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CARG": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CASF": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CASN": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CASP": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CCYS": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CCYX": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CGLN": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CGLU": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CGLY": {
+      "explicit_impropers": []
+    },
+    "CHID": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CHIE": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CHIP": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CILE": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CL": {
+      "explicit_impropers": []
+    },
+    "CLEU": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CLYS": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CME": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CMET": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CPHE": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CPRO": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CS": {
+      "explicit_impropers": []
+    },
+    "CSER": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CTHR": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CTRP": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CTYR": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CVAL": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CYM": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CYS": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "CYX": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "DAB": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "GLH": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "GLN": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "GLU": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "GLY": {
+      "explicit_impropers": []
+    },
+    "HID": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "HIE": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "HIP": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "HO4": {
+      "explicit_impropers": []
+    },
+    "HOH": {
+      "explicit_impropers": []
+    },
+    "HYP": {
+      "explicit_impropers": []
+    },
+    "IB+": {
+      "explicit_impropers": []
+    },
+    "ILE": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "K": {
+      "explicit_impropers": []
+    },
+    "LEU": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "LI": {
+      "explicit_impropers": []
+    },
+    "LYN": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "LYS": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "MET": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "MG": {
+      "explicit_impropers": []
+    },
+    "NA": {
+      "explicit_impropers": []
+    },
+    "NALA": {
+      "explicit_impropers": []
+    },
+    "NARG": {
+      "explicit_impropers": []
+    },
+    "NASN": {
+      "explicit_impropers": []
+    },
+    "NASP": {
+      "explicit_impropers": []
+    },
+    "NCYS": {
+      "explicit_impropers": []
+    },
+    "NCYX": {
+      "explicit_impropers": []
+    },
+    "NGLN": {
+      "explicit_impropers": []
+    },
+    "NGLU": {
+      "explicit_impropers": []
+    },
+    "NGLY": {
+      "explicit_impropers": []
+    },
+    "NH2": {
+      "explicit_impropers": []
+    },
+    "NHE": {
+      "explicit_impropers": []
+    },
+    "NHID": {
+      "explicit_impropers": []
+    },
+    "NHIE": {
+      "explicit_impropers": []
+    },
+    "NHIP": {
+      "explicit_impropers": []
+    },
+    "NILE": {
+      "explicit_impropers": []
+    },
+    "NLEU": {
+      "explicit_impropers": []
+    },
+    "NLYS": {
+      "explicit_impropers": []
+    },
+    "NME": {
+      "explicit_impropers": []
+    },
+    "NMET": {
+      "explicit_impropers": []
+    },
+    "NPHE": {
+      "explicit_impropers": []
+    },
+    "NPRO": {
+      "explicit_impropers": []
+    },
+    "NSER": {
+      "explicit_impropers": []
+    },
+    "NTHR": {
+      "explicit_impropers": []
+    },
+    "NTRP": {
+      "explicit_impropers": []
+    },
+    "NTYR": {
+      "explicit_impropers": []
+    },
+    "NVAL": {
+      "explicit_impropers": []
+    },
+    "ORN": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "PHE": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "PRO": {
+      "explicit_impropers": []
+    },
+    "RB": {
+      "explicit_impropers": []
+    },
+    "SER": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "THR": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "TRP": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "TYR": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "URE": {
+      "explicit_impropers": []
+    },
+    "VAL": {
+      "explicit_impropers": [
+        {
+          "atom1": "-C",
+          "atom2": "N",
+          "atom3": "CA",
+          "atom4": "C",
+          "k_kj_per_mol": 1.6736,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 2.7196,
+          "periodicity": 1,
+          "phase_degrees": 160.888
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -1.0669,
+          "periodicity": 1,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.3138,
+          "periodicity": 2,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.2385,
+          "periodicity": 3,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": 0.1046,
+          "periodicity": 4,
+          "phase_degrees": 90.0
+        },
+        {
+          "atom1": "N",
+          "atom2": "CA",
+          "atom3": "C",
+          "atom4": "+N",
+          "k_kj_per_mol": -0.046,
+          "periodicity": 5,
+          "phase_degrees": 90.0
+        }
+      ]
+    },
+    "ZN": {
+      "explicit_impropers": []
+    }
+  },
+  "source": "HydroMap vendored a99SBdisp residue/improper metadata"
+}

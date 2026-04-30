@@ -1,0 +1,9 @@
+{
+  "added_impropers": 1183,
+  "case": "alpha",
+  "custom_nonbonded_exclusions_hash": "ae149f98379b9acb0f0f791aacc7d97e5500a524bd49c1f56bc8f6640c417db1",
+  "format_version": 2,
+  "num_constraints": 28497,
+  "num_particles": 39055,
+  "potential_energy_kj_per_mol": -170493.27847287265
+}

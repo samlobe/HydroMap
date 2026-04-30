@@ -1,0 +1,19 @@
+name: hydromap-gpu
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - openmm=8.2.0
+  - cuda-version=12.4
+  - cuda-cudart-dev=12.4
+  - cuda-crt-dev_linux-64=12.4
+  - pdbfixer
+  - mdanalysis=2.10.0
+  - numpy=1.26.4
+  - pandas
+  - pyyaml
+  - joblib
+  - tqdm
+  - pip
+  - pip:
+      - cupy-cuda12x==13.6.0

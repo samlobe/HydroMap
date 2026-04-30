@@ -1,0 +1,9 @@
+{
+  "added_impropers": 85,
+  "case": "SLS1_monomer",
+  "custom_nonbonded_exclusions_hash": "f5f7b65f7fe33e86022cd9266b63d0ad655dcdce83d1115077f90e3d6ff38a3f",
+  "format_version": 2,
+  "num_constraints": 8395,
+  "num_particles": 11287,
+  "potential_energy_kj_per_mol": -33075.85740584633
+}

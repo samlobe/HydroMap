@@ -1,0 +1,11 @@
+*
+!.dockerignore
+!Dockerfile.gpu
+!LICENSE
+!README.md
+!environment.gpu.yml
+!pyproject.toml
+!configs/**
+!hydromap/**
+!tests/fixtures/**
+!tools/**

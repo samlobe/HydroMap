@@ -1,0 +1,101 @@
+# HydroMap example: common advanced configuration patterns
+#
+# Use this as a reference for restraints, salt, histidine protonation,
+# custom grouping, and analysis windows or sampling.
+input_dir: ../tests/fixtures
+artifacts_root: ../artifacts
+
+proteins:
+  - tiny_protein
+seeds:
+  - 42
+
+model_path: ../hydromap/models/Fdewet.joblib
+forcefield: a99SBdisp
+
+# Optional custom selections file (one MDAnalysis selection per line).
+# groups_file: ../inputs/custom_groups_example_protein.txt
+
+md:
+  device: gpu
+  nanoseconds: 0.5
+
+  # Optional equilibration restraint on a subset of atoms.
+  # A few useful examples:
+  # restrain_selection: "protein and name CA"
+  # restrain_selection: "backbone"
+  # restrain_selection: "protein and resid 330:530"
+  # restrain_selection: "protein and chainID B"
+  restrain_selection: "protein and name CA"
+  restraint_k: 1000.0
+
+  equilibration_ns: 0.1
+  timestep_ps: 0.003
+  report_interval_ps: 1
+  strip_non_protein: true
+  checkpoint_policy: error
+  allow_cpu_md: false
+  deterministic: true
+  cuda_precision: mixed
+
+  # Optional broader missing-atom repair for incomplete internal residues.
+  # Default terminal handling drops incomplete end residues automatically.
+  # repair_missing_atoms: pdbfixer
+
+  # Optional peptide capping during preparation.
+  # none: keep canonical charged termini / break ends as-is
+  # termini: cap true chain termini only
+  # breaks: cap only detected internal break boundaries
+  # termini_and_breaks: cap both
+  capping_mode: none
+
+  # Intake/prep review policy.
+  # permissive: continue and summarize prep interventions in prepare_report.json
+  # strict: exit after writing prepare_report.json if preparation had to intervene
+  prep_policy: permissive
+
+  # Example salt / neutralization controls.
+  # HydroMap neutralizes by default. Set ionic_strength_molar > 0 to add
+  # extra salt pairs after neutralization.
+  # Current packaged a99SBdisp support:
+  # positive_ion: Na+, K+, Li+, Rb+, Cs+
+  # negative_ion: Cl-, Br-, F-, I-
+  neutralize: true
+  ionic_strength_molar: 0.15
+  positive_ion: K+
+  negative_ion: Cl-
+
+  # Example histidine protonation controls.
+  # histidine_mode can be: auto, hid, hie, hip
+  histidine_mode: auto
+  histidine_overrides:
+    "B:417": HIP
+    "505": HID
+
+analysis:
+  discard_initial_ns: 0.0
+
+  # Restrict analysis to the final part of the trajectory.
+  tail_ns: 0.2
+
+  triplets_device: gpu
+  # Use ps-based sampling when you want time-based intervals instead of frame stride.
+  triplets_sample_ps: 3.0
+  triplets_hydration_cutoff: 4.25
+
+  potentials_device: gpu
+  potentials_sample_ps: 30.0
+  potentials_cutoff: 4.25
+
+  # Minimum waters required near a residue before reporting hydration
+  # statistics/potentials for it. Increase this to suppress sparse/noisy cases.
+  min_waters: 5
+  color_properties: [Fdewet, PC1, PC2, PC3]
+
+resources:
+  max_cpu_workers: 8
+  reserve_cpus: 2
+  max_gpu_jobs: 1
+
+execution:
+  profile: balanced

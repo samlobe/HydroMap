@@ -1,0 +1,48 @@
+# HydroMap example: analyze an existing explicit-solvent trajectory
+#
+# Use this when the trajectory was generated outside HydroMap.
+# Run with:
+#   hydromap analyze --config configs/example_external_trajectory.yaml
+# `input_dir` is not used for structure loading in this mode; HydroMap
+# analyzes the processed PDB and trajectory listed below.
+input_dir: ../tests/fixtures
+artifacts_root: ../artifacts
+
+protein: tiny_protein
+seed: 42
+
+model_path: ../hydromap/models/Fdewet.joblib
+forcefield: a99SBdisp
+
+analysis:
+  # Required: explicit-solvent processed/solvated PDB and matching trajectory.
+  # The `protein` name is used for output naming.
+  existing_processed_pdb: /path/to/protein_processed_or_solvated.pdb
+  existing_trajectory: /path/to/traj.dcd
+
+  # Optional: provide a matching OpenMM System XML or GROMACS .top.
+  # If omitted, HydroMap will try to rebuild an OpenMM XML only for a99SBdisp.
+  # existing_topology: /path/to/topol.top
+
+  # Analyze all post-discard frames unless tail_ns is set.
+  discard_initial_ns: 0.0
+  tail_ns: null
+
+  triplets_device: gpu
+  triplets_frame_stride: 1
+  triplets_hydration_cutoff: 4.25
+
+  potentials_device: gpu
+  potentials_frame_stride: 100
+  potentials_cutoff: 4.25
+
+  min_waters: 5
+  color_properties: [Fdewet, PC1, PC2, PC3]
+
+resources:
+  max_cpu_workers: 8
+  reserve_cpus: 2
+  max_gpu_jobs: 1
+
+execution:
+  profile: balanced

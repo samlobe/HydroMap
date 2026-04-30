@@ -1,0 +1,1 @@
+"""HydroMap packaged model artifacts."""

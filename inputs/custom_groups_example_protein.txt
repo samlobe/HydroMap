@@ -1,0 +1,7 @@
+resid 23 and name H
+resid 24 and name H
+resid 25 and name H
+resid 26 and name H
+resid 27 and name H
+resid 72-82 and not backbone and not name H*
+around 6 (resid 18)
