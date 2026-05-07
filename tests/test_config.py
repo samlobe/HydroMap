@@ -25,13 +25,14 @@ def test_load_config_defaults_and_lists(tmp_path: Path) -> None:
 input_dir: {fixture_dir}
 protein: tiny_protein
 seed: 11
-model_path: {model}
 """,
     )
 
     cfg = load_config(cfg_path, repo_root=REPO_ROOT)
     assert cfg.proteins == ["tiny_protein"]
     assert cfg.seeds == [11]
+    assert cfg.model_path == model
+    assert cfg.artifacts_root == REPO_ROOT / "artifacts"
     assert cfg.execution.profile == "balanced"
     assert cfg.md.allow_cpu_md is False
     assert cfg.md.nanoseconds == pytest.approx(0.5)

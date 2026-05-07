@@ -138,7 +138,7 @@ hydromap analyze  --config configs/example_external_trajectory.yaml
 For most users, the settings that matter are:
 
 - run setup:
-  `input_dir`, `proteins`/`protein`, `seeds`/`seed`, `model_path`, `forcefield`
+  `input_dir`, `proteins`/`protein`, `seeds`/`seed`
 - simulation length:
   `md.nanoseconds`
 - restraints:

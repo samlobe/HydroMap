@@ -1,65 +1,25 @@
 # HydroMap example: standard GPU workflow
-input_dir: ../tests/fixtures
-artifacts_root: ../artifacts
+#
+# Copy this file, put your PDB in inputs/, then change protein below.
+# For more options, see example_advanced.yaml.
 
-proteins:
-  - tiny_protein
-seeds:
-  - 42
+# Looks for inputs/example_tiny_protein.pdb.
+input_dir: ../inputs
 
-model_path: ../hydromap/models/Fdewet.joblib
-forcefield: a99SBdisp
+protein: example_tiny_protein
 
-# Optional custom selections file (one MDAnalysis selection per line).
-# groups_file: ../inputs/custom_groups_example_protein.txt
+# Optional: change this, or use `seeds: [1, 2, 3]` for replicate runs.
+seed: 42
 
 md:
-  device: gpu
+  # Increase for production runs.
   nanoseconds: 0.5
-  restrain_selection: null
-  restraint_k: 1000.0
-  equilibration_ns: 0.1
-  timestep_ps: 0.003
-  report_interval_ps: 1
-  strip_non_protein: true
-  checkpoint_policy: error
-  allow_cpu_md: false
-  deterministic: true
-  cuda_precision: mixed
-  # Optional broader missing-atom repair:
-  # repair_missing_atoms: pdbfixer
-  neutralize: true
-  ionic_strength_molar: 0.0
-  positive_ion: Na+
-  negative_ion: Cl-
-  # Advanced protonation control:
-  # histidine_mode: auto
-  # histidine_overrides:
-  #   "B:417": HIP
 
-analysis:
-  # For external explicit-solvent analysis, set:
-  # existing_processed_pdb: /path/to/protein_processed_or_solvated.pdb
-  # existing_trajectory: /path/to/traj.dcd
-  # existing_topology: /path/to/topol.top   # optional; .top or .xml
-  discard_initial_ns: 0.0
-  tail_ns: null
+  # Optional positional restraint for selected atoms (using MDAnalysis selection language). Common choices:
+  # restrain_selection: "protein and name CA"
+  # restrain_selection: "backbone"
 
-  triplets_device: gpu
-  triplets_frame_stride: 1
-  triplets_hydration_cutoff: 4.25
-
-  potentials_device: gpu
-  potentials_frame_stride: 100
-  potentials_cutoff: 4.25
-
-  min_waters: 5
-  color_properties: []
-
-resources:
-  max_cpu_workers: 8
-  reserve_cpus: 2
-  max_gpu_jobs: 1
-
-execution:
-  profile: balanced
+# Optional: choose which colored PDB files to write.
+# Defaults to PC1, PC2, PC3, Fdewet, and water_potential.
+# analysis:
+#   color_properties: [Fdewet, PC1, PC2, PC3]

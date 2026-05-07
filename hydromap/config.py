@@ -198,8 +198,14 @@ def load_config(config_path: str | Path, repo_root: str | Path | None = None) ->
     seeds = [int(s) for s in _as_list(data.get("seeds", data.get("seed", [42])))]
 
     input_dir = _resolve_path(cfg_dir, data.get("input_dir", "."))
-    artifacts_root = _resolve_path(cfg_dir, data.get("artifacts_root", "artifacts"))
-    model_path = _resolve_path(cfg_dir, data.get("model_path", "hydromap/models/Fdewet.joblib"))
+    if data.get("artifacts_root") is None:
+        artifacts_root = (repo_root_path / "artifacts").resolve()
+    else:
+        artifacts_root = _resolve_path(cfg_dir, data.get("artifacts_root"))
+    if data.get("model_path") is None:
+        model_path = (repo_root_path / "hydromap" / "models" / "Fdewet.joblib").resolve()
+    else:
+        model_path = _resolve_path(cfg_dir, data.get("model_path"))
     groups_file = _resolve_path(cfg_dir, data.get("groups_file"))
 
     md_raw = data.get("md", {}) or {}

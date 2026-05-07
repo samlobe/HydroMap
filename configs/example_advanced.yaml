@@ -20,7 +20,7 @@ md:
   device: gpu
   nanoseconds: 0.5
 
-  # Optional equilibration restraint on a subset of atoms.
+  # Optional positional restraint on a subset of atoms during the MD run.
   # A few useful examples:
   # restrain_selection: "protein and name CA"
   # restrain_selection: "backbone"
@@ -93,7 +93,7 @@ analysis:
   color_properties: [Fdewet, PC1, PC2, PC3]
 
 resources:
-  max_cpu_workers: 8
+  max_cpu_workers: 8 # relevant if you do pick device: cpu which isn't recommended 
   reserve_cpus: 2
   max_gpu_jobs: 1
 

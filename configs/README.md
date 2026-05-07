@@ -16,15 +16,17 @@ Suggested starting points:
 
 # HydroMap v2 Config Schema
 
-Paths are resolved relative to the config file location.
+Paths you set are resolved relative to the config file location. Omitted built-in
+paths, such as the default model and output directory, resolve from the HydroMap
+repository root.
 
 ## Top-Level
 
 - `input_dir`: directory containing `<protein>.pdb` input files.
-- `artifacts_root`: output root (default `artifacts`).
+- `artifacts_root`: output root (default: repository `artifacts/`).
 - `protein` or `proteins`: one protein or a list (without `.pdb`).
 - `seed` or `seeds`: one seed or a list.
-- `model_path`: prediction model path (default `hydromap/models/Fdewet.joblib`).
+- `model_path`: prediction model path (default: packaged `Fdewet.joblib` model).
 - `forcefield`: forcefield label for prediction processing (`a99SBdisp` default).
 - `groups_file`: optional custom groups file (one MDAnalysis selection per line).
 
