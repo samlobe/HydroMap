@@ -33,11 +33,11 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module=r".*MDAnal
 # -------- helpers for insertion codes (match triplet.py behavior) --------
 def parse_res_token(tok: str):
     """
-    Parse residue tokens like '112', '112A', '7c' -> (112, 'A'/'C' or '')
+    Parse residue tokens like '112', '-2', '112A', '7c' -> (number, insertion code).
     """
-    m = re.fullmatch(r'\s*(\d+)\s*([A-Za-z]?)\s*', str(tok))
+    m = re.fullmatch(r'\s*(-?\d+)\s*([A-Za-z]?)\s*', str(tok))
     if not m:
-        raise ValueError(f"Invalid residue token: {tok!r} (expected e.g. 112 or 112B)")
+        raise ValueError(f"Invalid residue token: {tok!r} (expected e.g. -2, 112, or 112B)")
     resseq = int(m.group(1))
     icode = m.group(2).upper()
     return resseq, icode
