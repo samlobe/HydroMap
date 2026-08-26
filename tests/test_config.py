@@ -37,9 +37,13 @@ seed: 11
     assert cfg.md.allow_cpu_md is False
     assert cfg.md.nanoseconds == pytest.approx(0.5)
     assert cfg.md.equilibration_ns == pytest.approx(0.1)
+    assert cfg.md.equilibration_protocol == "constant"
     assert cfg.md.device == "gpu"
     assert cfg.md.timestep_ps == pytest.approx(0.003)
     assert cfg.md.report_interval_ps == pytest.approx(1.0)
+    assert cfg.md.checkpoint_interval_ps == pytest.approx(10.0)
+    assert cfg.md.initial_state is None
+    assert cfg.md.constant_volume is False
     assert cfg.md.neutralize is True
     assert cfg.md.ionic_strength_molar == pytest.approx(0.0)
     assert cfg.md.positive_ion == "Na+"
@@ -91,6 +95,55 @@ execution:
     )
 
     with pytest.raises(ConfigError, match="execution.profile"):
+        load_config(cfg_path, repo_root=REPO_ROOT)
+
+
+def test_resumable_md_options_are_loaded(tmp_path: Path) -> None:
+    fixture_dir = REPO_ROOT / "tests" / "fixtures"
+    cfg_path = write_config(
+        tmp_path,
+        f"""
+input_dir: {fixture_dir}
+protein: tiny_protein
+md:
+  equilibration_protocol: gradual
+  checkpoint_interval_ps: 25
+  initial_state: states/{{protein}}_{{seed}}.xml
+  constant_volume: true
+""",
+    )
+
+    cfg = load_config(cfg_path, repo_root=REPO_ROOT)
+    assert cfg.md.equilibration_protocol == "gradual"
+    assert cfg.md.checkpoint_interval_ps == pytest.approx(25.0)
+    assert cfg.md.initial_state == "states/{protein}_{seed}.xml"
+    assert cfg.md.constant_volume is True
+
+
+@pytest.mark.parametrize(
+    ("md_yaml", "message"),
+    [
+        ("equilibration_protocol: fast", "equilibration_protocol"),
+        ("checkpoint_interval_ps: 0", "checkpoint_interval_ps"),
+        ("timestep_ps: 0.004\ncheckpoint_interval_ps: 0.003", "checkpoint_interval_ps"),
+    ],
+)
+def test_invalid_resumable_md_options_are_rejected(
+    tmp_path: Path, md_yaml: str, message: str
+) -> None:
+    fixture_dir = REPO_ROOT / "tests" / "fixtures"
+    indented = "\n".join(f"  {line}" for line in md_yaml.splitlines())
+    cfg_path = write_config(
+        tmp_path,
+        f"""
+input_dir: {fixture_dir}
+protein: tiny_protein
+md:
+{indented}
+""",
+    )
+
+    with pytest.raises(ConfigError, match=message):
         load_config(cfg_path, repo_root=REPO_ROOT)
 
 

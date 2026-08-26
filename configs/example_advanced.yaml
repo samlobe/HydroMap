@@ -30,10 +30,15 @@ md:
   restraint_k: 1000.0
 
   equilibration_ns: 0.1
+  equilibration_protocol: constant
   timestep_ps: 0.003
   report_interval_ps: 1
+  checkpoint_interval_ps: 10
   strip_non_protein: true
   checkpoint_policy: error
+  constant_volume: false
+  # Optional conditioned OpenMM State XML. Supports {protein} and {seed}.
+  # initial_state: "states/{protein}_seed{seed}.xml"
   allow_cpu_md: false
   deterministic: true
   cuda_precision: mixed

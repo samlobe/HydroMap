@@ -75,7 +75,41 @@ def test_simulate_falls_back_to_cpu_only_if_allowed(tmp_path: Path) -> None:
     assert cmd[3] == paths.topology.name
     assert "--noCUDA" in cmd
     assert "--equilibration_ps" in cmd
+    assert cmd[cmd.index("--equilibration_protocol") + 1] == "constant"
+    assert cmd[cmd.index("--checkpoint_interval_ps") + 1] == "10.0"
     assert meta["cpu_md_fallback"] is True
+
+
+def test_simulate_passes_initial_state_and_nvt_controls(tmp_path: Path) -> None:
+    cfg = load_config(make_cfg(tmp_path, allow_cpu_md=True), repo_root=REPO_ROOT)
+    initial_state = tmp_path / "tiny_protein_123.xml"
+    initial_state.write_text("<State/>", encoding="utf-8")
+    cfg.md.initial_state = str(tmp_path / "{protein}_{seed}.xml")
+    cfg.md.constant_volume = True
+    cfg.md.equilibration_protocol = "gradual"
+    cfg.md.checkpoint_interval_ps = 25.0
+    runner = HydroMapRunner(cfg, run_id="test")
+    case = CaseSpec("tiny_protein", 123)
+    paths = runner._case_paths(case)
+    paths.simulation.mkdir(parents=True, exist_ok=True)
+    paths.processed_pdb.parent.mkdir(parents=True, exist_ok=True)
+    paths.processed_pdb.write_text("dummy", encoding="utf-8")
+    paths.topology.write_text("dummy", encoding="utf-8")
+    captured: list[list[str]] = []
+
+    def fake_run_command(case_arg, stage, cmd, cwd):
+        captured.append(cmd)
+        paths.trajectory.write_text("dummy", encoding="utf-8")
+
+    runner._run_command = fake_run_command  # type: ignore[method-assign]
+    runner._cuda_available = lambda: True  # type: ignore[method-assign]
+    runner._run_simulate(case, paths)
+
+    cmd = captured[0]
+    assert "--nvt" in cmd
+    assert cmd[cmd.index("--initial_state") + 1] == str(initial_state)
+    assert cmd[cmd.index("--equilibration_protocol") + 1] == "gradual"
+    assert cmd[cmd.index("--checkpoint_interval_ps") + 1] == "25.0"
 
 
 def test_prepare_passes_ion_controls_to_openmm_prep(tmp_path: Path) -> None:

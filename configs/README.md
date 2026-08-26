@@ -36,8 +36,12 @@ repository root.
 - `nanoseconds` (default `0.5`)
 - `restrain_selection` (alias: `restrain`), `restraint_k`
 - `equilibration_ns`
+- `equilibration_protocol`: `constant` (default) or staged `gradual` heating
 - `timestep_ps`: integrator timestep (default `0.003`)
 - `report_interval_ps`: trajectory/report interval (default `1.0`)
+- `checkpoint_interval_ps`: equilibration/production checkpoint interval (default `10.0`)
+- `constant_volume`: set `true` for NVT instead of the default NPT ensemble
+- `initial_state`: optional OpenMM State XML; supports `{protein}` and `{seed}` placeholders and skips minimization/equilibration when no production checkpoint exists
 - `strip_non_protein` (default `true`)
 - `random_seed`, `preprocess_seed`, `velocity_seed`, `barostat_seed`
 - `checkpoint_policy`: `error`, `resume`, or `overwrite`
@@ -112,6 +116,13 @@ md:
 - `histidine_mode: hip` forces all histidines positive unless a per-residue override says otherwise.
 - Per-residue overrides take precedence over the global mode.
 - Residue-only keys such as `"505"` are useful when chain IDs are unreliable in the raw PDB.
+
+## Restart behavior
+
+- `checkpoint_policy: resume` resumes production from the production checkpoint, or an interrupted equilibration from its separate equilibration checkpoint.
+- `checkpoint_policy: overwrite` starts over and removes prior checkpoint/output files for that case.
+- Production time and step count start at zero after equilibration, so resumed production is not offset by the equilibration duration.
+- OpenMM checkpoints are platform- and version-sensitive. Use `initial_state` for a portable conditioned State XML; it is ignored when a production checkpoint is present.
 
 ## Preparation Behavior
 

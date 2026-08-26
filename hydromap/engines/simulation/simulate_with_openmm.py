@@ -33,13 +33,17 @@ parser.add_argument('--velocity_seed',default=None,type=int,help='Random seed us
 parser.add_argument('--barostat_seed',default=None,type=int,help='Random seed used by MonteCarloBarostat. Defaults to --random_seed.')
 parser.add_argument('-o','--output',type=str,help='Output trajectory file name (.dcd), will default to {protein_name}_traj.dcd')
 parser.add_argument('--checkpoint_policy',choices=['error','resume','overwrite'],default='error',help='How to handle existing checkpoint/output files: error (default), resume, or overwrite.')
+parser.add_argument('--initial_state',type=str,default=None,help='Optional OpenMM State XML containing conditioned coordinates and velocities. Used only when no production checkpoint exists.')
 parser.add_argument('--deterministic',action='store_true',help='Enable strict deterministic platform settings (when available).')
 parser.add_argument('--cuda_precision',choices=['single','mixed','double'],default='mixed',help='CUDA precision mode (default: mixed).')
 parser.add_argument('--equilibration_ps',type=float,default=100.0,help='Equilibration time before production, in ps (default: 100).')
+parser.add_argument('--equilibration_protocol', choices=['constant', 'gradual'], default='constant', help='Constant 300 K or gradual 50-to-300 K restrained equilibration.')
 parser.add_argument('--timestep_ps', type=float, default=0.003, help='Integrator timestep in ps (default: 0.003, i.e. 3 fs).')
 parser.add_argument('--report_interval_ps', type=float, default=0.5, help='Trajectory/report interval in ps (default: 0.5).')
+parser.add_argument('--checkpoint_interval_ps', type=float, default=10.0, help='Checkpoint interval in ps for equilibration and production (default: 10).')
 parser.add_argument('--noCUDA',action='store_true',help='set to avoid using CUDA.')
 parser.add_argument('--debug',action='store_true',help='print additional debug information.')
+parser.add_argument('--nvt', action='store_true', help='Run at constant volume without a barostat.')
 args = parser.parse_args()
 
 # example usage: python simulate_with_openmm.py myProtein_processed -ns 5 -r -o traj.dcd
@@ -92,9 +96,13 @@ integrator_seed = args.random_seed
 velocity_seed = args.velocity_seed if args.velocity_seed is not None else integrator_seed
 barostat_seed = args.barostat_seed if args.barostat_seed is not None else integrator_seed
 print(f"Seeds: integrator={integrator_seed}, velocities={velocity_seed}, barostat={barostat_seed}")
-barostat = MonteCarloBarostat(pressure, temperature, barostatInterval)
-barostat.setRandomNumberSeed(barostat_seed)
-system.addForce(barostat)
+if args.nvt:
+    print("Ensemble: NVT (barostat disabled)")
+else:
+    print("Ensemble: NPT")
+    barostat = MonteCarloBarostat(pressure, temperature, barostatInterval)
+    barostat.setRandomNumberSeed(barostat_seed)
+    system.addForce(barostat)
 
 # Integration Options
 if args.timestep_ps <= 0:
@@ -103,6 +111,8 @@ if args.report_interval_ps <= 0:
     raise ValueError("--report_interval_ps must be > 0.")
 if args.report_interval_ps < args.timestep_ps:
     raise ValueError("--report_interval_ps must be >= --timestep_ps.")
+if args.checkpoint_interval_ps < args.timestep_ps:
+    raise ValueError("--checkpoint_interval_ps must be >= --timestep_ps.")
 
 dt = args.timestep_ps * picosecond
 friction = 2/picosecond
@@ -156,7 +166,7 @@ elif args.deterministic and platform.getName() == "CPU":
 # Set reporter frequency
 report_frequency_ps = args.report_interval_ps
 steps_per_report = max(1, int(round(report_frequency_ps / (dt/picosecond))))
-steps_per_checkpoint = int(steps_per_report)*100
+steps_per_checkpoint = max(1, int(round(args.checkpoint_interval_ps / (dt/picosecond))))
 actual_report_ps = steps_per_report * (dt / picosecond)
 print(f"Trajectory/report interval target: {report_frequency_ps} ps (actual {actual_report_ps:.6f} ps)")
 
@@ -226,22 +236,41 @@ else:
 
 # Load from the checkpoint if it exists
 checkpoint_file = f'{protein_name}_checkpoint.chk'
+equilibration_checkpoint_file = f'{protein_name}_equilibration_checkpoint.chk'
 energies_file = f'{protein_name}_energies.log'
 endState_file = f'{protein_name}_endState'
 checkpoint_exists = os.path.exists(checkpoint_file)
+equilibration_checkpoint_exists = os.path.exists(equilibration_checkpoint_file)
+restart_paths = [checkpoint_file, equilibration_checkpoint_file, energies_file, endState_file, traj_name]
+existing_restart_paths = [path for path in restart_paths if os.path.exists(path)]
 
-if checkpoint_exists and args.checkpoint_policy == "error":
+if existing_restart_paths and args.checkpoint_policy == "error":
     raise FileExistsError(
-        f"Found existing checkpoint '{checkpoint_file}' with checkpoint policy 'error'. "
+        f"Found existing simulation artifacts {existing_restart_paths} with checkpoint policy 'error'. "
         "Use --checkpoint_policy resume to continue or --checkpoint_policy overwrite to restart."
     )
 
-if checkpoint_exists and args.checkpoint_policy == "overwrite":
-    print(f"Found checkpoint and outputs for {protein_name}; removing them because checkpoint policy is 'overwrite'.")
-    for path in [checkpoint_file, energies_file, endState_file, traj_name]:
-        if os.path.exists(path):
-            os.remove(path)
+if existing_restart_paths and args.checkpoint_policy == "overwrite":
+    print(f"Found simulation artifacts for {protein_name}; removing them because checkpoint policy is 'overwrite'.")
+    for path in existing_restart_paths:
+        os.remove(path)
     checkpoint_exists = False
+    equilibration_checkpoint_exists = False
+
+if (
+    args.checkpoint_policy == "resume"
+    and existing_restart_paths
+    and not checkpoint_exists
+    and not equilibration_checkpoint_exists
+):
+    raise FileNotFoundError(
+        f"Cannot resume because output artifacts exist but neither '{checkpoint_file}' nor "
+        f"'{equilibration_checkpoint_file}' is present. Use --checkpoint_policy overwrite to restart."
+    )
+
+starting_from_state = bool(
+    args.initial_state and not checkpoint_exists and not equilibration_checkpoint_exists
+)
 
 if checkpoint_exists and args.checkpoint_policy == "resume":
     tik = time()
@@ -249,10 +278,6 @@ if checkpoint_exists and args.checkpoint_policy == "resume":
     # Load from the checkpoint
     with open(checkpoint_file, 'rb') as f:
         simulation.context.loadCheckpoint(f.read())
-
-    # subtract equilibration (equilibration_time_ps (=100 ps) and equilibration_steps)
-    simulation.context.setTime(simulation.context.getTime() - equilibration_time_ps* picosecond)
-    simulation.context.setStepCount(simulation.context.getStepCount() - equilibration_steps)
 
     # Adjust the number of steps to simulate based on the total desired steps and the current step count
     steps_remaining = steps - simulation.currentStep
@@ -281,12 +306,70 @@ if checkpoint_exists and args.checkpoint_policy == "resume":
         simulation.step(leftover_steps)
 
 else:
-    # If checkpoint doesn't exist, perform energy minimization
-    print('Performing energy minimization...')
-    simulation.minimizeEnergy()
+    # If a validated conditioned State was supplied, preserve its coordinates
+    # and velocities and begin production without re-minimizing the original
+    # packed structure.
+    if starting_from_state:
+        print(f'Loading conditioned initial state from {args.initial_state}...')
+        simulation.loadState(args.initial_state)
+    else:
+        print('Performing energy minimization...')
+        simulation.minimizeEnergy()
     print(f'Performing {total_simulation_time:.1f} ns simulation...\nShowing progress bar in 0.1 ns increments:')
     tik = time()
-    simulation.step(equilibration_steps)
+    if not starting_from_state and equilibration_checkpoint_exists and args.checkpoint_policy == "resume":
+        print(f"Resuming equilibration from {equilibration_checkpoint_file}.")
+        with open(equilibration_checkpoint_file, "rb") as handle:
+            simulation.context.loadCheckpoint(handle.read())
+    elapsed_equilibration_ps = simulation.context.getTime().value_in_unit(picosecond)
+    if starting_from_state:
+        print('Conditioned state supplied; skipping minimization and equilibration.')
+    elif args.equilibration_protocol == 'gradual':
+        # Newly packed, highly solvated condensates can be unstable if their
+        # timestep is raised too quickly.  Finish with a short 1 fs bridge
+        # before switching to the requested production timestep.
+        phases = [
+            (0.10, 50.0, 0.00025),
+            (0.20, 100.0, 0.00025),
+            (0.30, 150.0, 0.00025),
+            (0.50, 200.0, 0.0005),
+            (0.70, 250.0, 0.0005),
+            (0.90, 300.0, 0.0005),
+            (1.00, 300.0, min(args.timestep_ps, 0.001)),
+        ]
+        if elapsed_equilibration_ps == 0.0:
+            simulation.context.setVelocitiesToTemperature(50*kelvin, velocity_seed)
+        print(
+            f"Gradual equilibration to 300 K over {equilibration_time_ps:g} ps; "
+            f"checkpointing every {args.checkpoint_interval_ps:g} ps."
+        )
+        for fraction, target_temperature, phase_dt_ps in phases:
+            phase_end_ps = fraction * equilibration_time_ps
+            if elapsed_equilibration_ps >= phase_end_ps - 1e-9:
+                continue
+            integrator.setStepSize(phase_dt_ps * picosecond)
+            integrator.setTemperature(target_temperature * kelvin)
+            phase_steps = int(round((phase_end_ps - elapsed_equilibration_ps) / phase_dt_ps))
+            checkpoint_steps = max(1, int(round(args.checkpoint_interval_ps / phase_dt_ps)))
+            simulation.reporters.clear()
+            simulation.reporters.append(CheckpointReporter(equilibration_checkpoint_file, checkpoint_steps))
+            print(f"Equilibration phase: {target_temperature:.0f} K to {phase_end_ps:.1f} ps ({phase_steps} steps).")
+            simulation.step(phase_steps)
+            elapsed_equilibration_ps = simulation.context.getTime().value_in_unit(picosecond)
+        integrator.setStepSize(dt)
+        integrator.setTemperature(temperature)
+    else:
+        equilibration_steps_remaining = max(0, equilibration_steps - simulation.currentStep)
+        simulation.reporters.append(CheckpointReporter(equilibration_checkpoint_file, steps_per_checkpoint))
+        if equilibration_steps_remaining:
+            print(
+                f"Equilibrating for {equilibration_steps_remaining * dt.value_in_unit(picosecond):.1f} ps remaining; "
+                f"checkpointing every {args.checkpoint_interval_ps:g} ps."
+            )
+            simulation.step(equilibration_steps_remaining)
+    simulation.reporters.clear()
+    if os.path.exists(equilibration_checkpoint_file):
+        os.remove(equilibration_checkpoint_file)
     # reset time & step count so production starts at t=0
     simulation.context.setTime(0.0)
     simulation.context.setStepCount(0)
@@ -297,7 +380,8 @@ else:
                                                   potentialEnergy=True, kineticEnergy=True, totalEnergy=True,
                                                   temperature=True, volume=True, separator='\t'))
     simulation.reporters.append(CheckpointReporter(checkpoint_file, steps_per_checkpoint))
-    simulation.context.setVelocitiesToTemperature(temperature, velocity_seed)
+    if not starting_from_state:
+        simulation.context.setVelocitiesToTemperature(temperature, velocity_seed)
     remove_duplicates = False
 
     # Production Run with progress bar

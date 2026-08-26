@@ -18,8 +18,12 @@ class MDConfig:
     restrain_selection: str | None = None
     restraint_k: float = 1000.0
     equilibration_ns: float = 0.1
+    equilibration_protocol: str = "constant"  # constant|gradual
     timestep_ps: float = 0.003
     report_interval_ps: float = 1.0
+    checkpoint_interval_ps: float = 10.0
+    initial_state: str | None = None
+    constant_volume: bool = False
     strip_non_protein: bool = True
     random_seed: int | None = None
     preprocess_seed: int | None = None
@@ -238,8 +242,16 @@ def load_config(config_path: str | Path, repo_root: str | Path | None = None) ->
         restrain_selection=resolved_restrain,
         restraint_k=float(md_raw.get("restraint_k", MDConfig.restraint_k)),
         equilibration_ns=float(md_raw.get("equilibration_ns", MDConfig.equilibration_ns)),
+        equilibration_protocol=str(
+            md_raw.get("equilibration_protocol", MDConfig.equilibration_protocol)
+        ).strip().lower(),
         timestep_ps=float(md_raw.get("timestep_ps", MDConfig.timestep_ps)),
         report_interval_ps=float(md_raw.get("report_interval_ps", MDConfig.report_interval_ps)),
+        checkpoint_interval_ps=float(
+            md_raw.get("checkpoint_interval_ps", MDConfig.checkpoint_interval_ps)
+        ),
+        initial_state=_optional_path_template(md_raw.get("initial_state")),
+        constant_volume=bool(md_raw.get("constant_volume", MDConfig.constant_volume)),
         strip_non_protein=bool(md_raw.get("strip_non_protein", MDConfig.strip_non_protein)),
         random_seed=(None if md_raw.get("random_seed") is None else int(md_raw.get("random_seed"))),
         preprocess_seed=(None if md_raw.get("preprocess_seed") is None else int(md_raw.get("preprocess_seed"))),
@@ -370,13 +382,22 @@ def validate_config(cfg: HydroMapConfig) -> None:
         "md.checkpoint_policy must be one of: error, resume, overwrite.",
     )
     _require(cfg.md.equilibration_ns >= 0.0, "md.equilibration_ns must be >= 0.")
+    _require(
+        cfg.md.equilibration_protocol in {"constant", "gradual"},
+        "md.equilibration_protocol must be constant or gradual.",
+    )
     _require(cfg.md.device in {"gpu", "cpu", "auto"}, "md.device must be one of: gpu, cpu, auto.")
     _require(cfg.md.timestep_ps > 0.0, "md.timestep_ps must be > 0.")
     _require(cfg.md.report_interval_ps > 0.0, "md.report_interval_ps must be > 0.")
+    _require(cfg.md.checkpoint_interval_ps > 0.0, "md.checkpoint_interval_ps must be > 0.")
     _require(cfg.md.ionic_strength_molar >= 0.0, "md.ionic_strength_molar must be >= 0.")
     _require(
         cfg.md.report_interval_ps >= cfg.md.timestep_ps,
         "md.report_interval_ps must be >= md.timestep_ps.",
+    )
+    _require(
+        cfg.md.checkpoint_interval_ps >= cfg.md.timestep_ps,
+        "md.checkpoint_interval_ps must be >= md.timestep_ps.",
     )
     _require(
         cfg.md.cuda_precision in {"single", "mixed", "double"},
