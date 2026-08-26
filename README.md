@@ -161,6 +161,10 @@ Common advanced controls:
   `analysis.triplets_frame_stride`, `analysis.potentials_frame_stride`
 - ion controls:
   `md.neutralize`, `md.ionic_strength_molar`, `md.positive_ion`, `md.negative_ion`
+- resumable MD:
+  `md.checkpoint_policy`, `md.checkpoint_interval_ps`, and
+  `md.equilibration_protocol`; optional `md.initial_state` starts production
+  from a conditioned OpenMM State XML, and `md.constant_volume` selects NVT
 
 For the full schema and advanced options, see [configs/README.md](configs/README.md).
 

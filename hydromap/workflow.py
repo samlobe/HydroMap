@@ -845,7 +845,7 @@ class WorkflowRunner:
             rendered = raw.format(protein=case.protein, seed=case.seed)
         except Exception as exc:
             raise RuntimeError(
-                f"Invalid template in analysis existing input path '{raw}'. "
+                f"Invalid case path template '{raw}'. "
                 "Supported placeholders: {protein}, {seed}."
             ) from exc
 
@@ -1021,10 +1021,14 @@ class WorkflowRunner:
             self.cfg.md.cuda_precision,
             "--equilibration_ps",
             str(self.cfg.md.equilibration_ns * 1000.0),
+            "--equilibration_protocol",
+            self.cfg.md.equilibration_protocol,
             "--timestep_ps",
             str(self.cfg.md.timestep_ps),
             "--report_interval_ps",
             str(self.cfg.md.report_interval_ps),
+            "--checkpoint_interval_ps",
+            str(self.cfg.md.checkpoint_interval_ps),
             "-o",
             f"{case.protein}_traj.dcd",
         ]
@@ -1041,6 +1045,13 @@ class WorkflowRunner:
 
         if self.cfg.md.deterministic:
             cmd.append("--deterministic")
+        if self.cfg.md.constant_volume:
+            cmd.append("--nvt")
+        if self.cfg.md.initial_state is not None:
+            initial_state = self._resolve_case_template_path(self.cfg.md.initial_state, case)
+            if not initial_state.is_file():
+                raise FileNotFoundError(f"Initial OpenMM state not found: {initial_state}")
+            cmd.extend(["--initial_state", str(initial_state)])
 
         self._run_command(case, "simulate", cmd, cwd=paths.simulation)
 
