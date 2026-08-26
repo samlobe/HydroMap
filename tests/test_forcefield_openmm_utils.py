@@ -117,6 +117,39 @@ def test_choose_hydrogen_variants_histidine_override_beats_global_mode() -> None
     ) == ["HIP"]
 
 
+def test_choose_hydrogen_variants_histidine_overrides_distinguish_insertion_codes() -> None:
+    topology = Topology()
+    chain = topology.addChain("B")
+    plain = topology.addResidue("HIS", chain, "417")
+    inserted = topology.addResidue("HIS", chain, "417", insertionCode="A")
+    atom_specs = [
+        ("N", elem.nitrogen),
+        ("CA", elem.carbon),
+        ("CB", elem.carbon),
+        ("CG", elem.carbon),
+        ("ND1", elem.nitrogen),
+        ("CD2", elem.carbon),
+        ("CE1", elem.carbon),
+        ("NE2", elem.nitrogen),
+    ]
+    for residue in (plain, inserted):
+        for atom_name, element in atom_specs:
+            topology.addAtom(atom_name, element, residue)
+
+    assert choose_hydrogen_variants(
+        topology,
+        histidine_mode="hie",
+        histidine_overrides={"B:417": "HID", "B:417A": "HIP"},
+    ) == ["HID", "HIP"]
+
+    # A plain-number override must not silently apply to an insertion-coded residue.
+    assert choose_hydrogen_variants(
+        topology,
+        histidine_mode="hie",
+        histidine_overrides={"B:417": "HID"},
+    ) == ["HID", "HIE"]
+
+
 def test_restore_pdb_atom_names_ignores_altloc_duplicates(tmp_path: Path) -> None:
     pdb_text = """\
 ATOM      1  N   ARG A   1      17.260  26.959  16.899  1.00 27.66           N
