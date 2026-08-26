@@ -163,6 +163,24 @@ def restore_cap_atom_names_after_hydrogens(topology) -> None:
                     atom.name = "HH33"
 
 
+def remove_pdb_conect_records(path: Path) -> int:
+    """Remove redundant CONECT records that can contain hybrid-36 serials.
+
+    OpenMM serializes the complete bonded system separately as XML. For systems
+    above 99,999 atoms, PDBFile writes hybrid-36 atom serials, while some
+    analysis readers accept those atom records but reject them in CONECT lines.
+    HydroMap uses this PDB for atom metadata and coordinates, so removing CONECT
+    avoids that compatibility failure without changing the simulation topology.
+    """
+
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    kept = [line for line in lines if not line.startswith("CONECT")]
+    removed = len(lines) - len(kept)
+    if removed:
+        path.write_text("".join(kept), encoding="utf-8")
+    return removed
+
+
 def _jitter_positions(positions, amplitude_nm: float, seed: int):
     rng = random.Random(seed)
     jittered = []
@@ -285,6 +303,7 @@ def main() -> None:
     output_system.parent.mkdir(parents=True, exist_ok=True)
     with output_pdb.open("w", encoding="utf-8") as handle:
         PDBFile.writeFile(modeller.topology, modeller.positions, handle)
+    prep_audit["removed_output_conect_record_count"] = remove_pdb_conect_records(output_pdb)
     output_system.write_text(XmlSerializer.serialize(system), encoding="utf-8")
     if args.audit_json:
         audit_path = Path(args.audit_json)
