@@ -168,6 +168,32 @@ END
     assert [atom.name for atom in pdb.topology.atoms()] == ["N", "CA", "C", "O", "CB"]
 
 
+def test_restore_pdb_atom_names_keeps_nonconsecutive_wrapped_identifiers(
+    tmp_path: Path,
+) -> None:
+    pdb_text = """\
+HETATM    1  O   HOH A   1       1.000   1.000   1.000  1.00  0.00           O
+HETATM    2  H1  HOH A   1       1.700   1.000   1.000  1.00  0.00           H
+HETATM    3  H2  HOH A   1       0.500   1.700   1.000  1.00  0.00           H
+HETATM    4  O   HOH A   2       4.000   4.000   4.000  1.00  0.00           O
+HETATM    5  H1  HOH A   2       4.700   4.000   4.000  1.00  0.00           H
+HETATM    6  H2  HOH A   2       3.500   4.700   4.000  1.00  0.00           H
+HETATM    7  O   HOH A   1       7.000   7.000   7.000  1.00  0.00           O
+HETATM    8  H1  HOH A   1       7.700   7.000   7.000  1.00  0.00           H
+HETATM    9  H2  HOH A   1       6.500   7.700   7.000  1.00  0.00           H
+END
+"""
+    pdb_path = tmp_path / "wrapped_residue_ids.pdb"
+    pdb_path.write_text(pdb_text, encoding="utf-8")
+
+    pdb = PDBFile(str(pdb_path))
+    assert pdb.topology.getNumAtoms() == 9
+    restore_pdb_atom_names(pdb.topology, pdb_path)
+    assert [atom.name for atom in pdb.topology.atoms()] == [
+        "O", "H1", "H2", "O", "H1", "H2", "O", "H1", "H2"
+    ]
+
+
 def test_add_hydrogens_with_fallback_retries_nan(monkeypatch) -> None:
     topology = _build_residue("ALA", ["N", "CA", "C", "O", "CB"])
     positions = [Vec3(0.0, 0.0, 0.0) for _ in topology.atoms()]

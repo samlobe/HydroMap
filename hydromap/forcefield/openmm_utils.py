@@ -135,7 +135,7 @@ def serialize_a99sbdisp_system_for_processed_pdb(input_pdb: str | Path, output_s
 
 def restore_pdb_atom_names(topology: Topology, pdb_path: str | Path) -> None:
     atom_names: list[str] = []
-    seen_atoms: set[tuple[str, str, str, str, str]] = set()
+    previous_atom: tuple[str, str, str, str, str] | None = None
     pdb_path = Path(pdb_path)
     with pdb_path.open("r", encoding="utf-8", errors="ignore") as handle:
         for line in handle:
@@ -150,9 +150,12 @@ def restore_pdb_atom_names(topology: Topology, pdb_path: str | Path) -> None:
                     line[17:20],
                     line[12:16],
                 )
-                if key in seen_atoms:
+                # Alternate locations for one atom are consecutive. Do not
+                # deduplicate globally: residue identifiers legitimately wrap
+                # in large explicit-solvent PDB files.
+                if key == previous_atom:
                     continue
-                seen_atoms.add(key)
+                previous_atom = key
                 atom_names.append(line[12:16].strip())
 
     topology_atoms = list(topology.atoms())
