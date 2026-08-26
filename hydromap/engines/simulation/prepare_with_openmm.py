@@ -80,10 +80,12 @@ def _parse_histidine_overrides(raw_overrides: list[str]) -> dict[str, str]:
 def _histidine_override_for_residue(residue, overrides: dict[str, str]) -> str | None:
     chain_id = residue.chain.id.strip().upper()
     residue_id = residue.id.strip().upper()
+    insertion_code = (getattr(residue, "insertionCode", "") or "").strip().upper()
+    residue_token = f"{residue_id}{insertion_code}"
     candidates = []
     if chain_id:
-        candidates.append(f"{chain_id}:{residue_id}")
-    candidates.append(residue_id)
+        candidates.append(f"{chain_id}:{residue_token}")
+    candidates.append(residue_token)
     for candidate in candidates:
         if candidate in overrides:
             return overrides[candidate]
