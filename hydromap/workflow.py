@@ -928,8 +928,14 @@ class WorkflowRunner:
                         "topology_source": str(src_top),
                         "prediction_support": "a99SBdisp_only",
                     }
-            else:
+            elif self.cfg.analysis.compute_potentials:
                 topology_summary = self._build_analysis_topology_fallback(paths.processed_pdb, paths.topology)
+            else:
+                topology_summary = {
+                    "topology_mode": "not_required_triplet_only",
+                    "topology_source": None,
+                    "prediction_support": "disabled_without_potentials",
+                }
 
             self._write_analysis_input_summary(paths, {**normalization_summary, **topology_summary})
             return
@@ -946,7 +952,7 @@ class WorkflowRunner:
 
         if triplets_device == "auto":
             triplets_device = "gpu" if self._triplet_gpu_available() else "cpu"
-        if potentials_device == "auto":
+        if self.cfg.analysis.compute_potentials and potentials_device == "auto":
             potentials_device = "gpu" if self._cuda_available() else "cpu"
         return triplets_device, potentials_device
 
@@ -1086,7 +1092,7 @@ class WorkflowRunner:
         potentials_tail = max(0.0, min(float(potentials_tail), available_ns))
         if triplets_tail <= 0.0:
             raise RuntimeError("Resolved triplets analysis window is <= 0 ns. Check analysis time-window settings.")
-        if potentials_tail <= 0.0:
+        if self.cfg.analysis.compute_potentials and potentials_tail <= 0.0:
             raise RuntimeError("Resolved potentials analysis window is <= 0 ns. Check analysis time-window settings.")
 
         return {
@@ -1102,7 +1108,7 @@ class WorkflowRunner:
             raise RuntimeError(
                 "Missing trajectory. Run `simulate` first or set analysis.existing_processed_pdb and analysis.existing_trajectory."
             )
-        if not paths.topology.exists():
+        if self.cfg.analysis.compute_potentials and not paths.topology.exists():
             raise RuntimeError(
                 "Missing topology. Run `prepare`/`simulate` first, provide analysis.existing_topology, "
                 "or use forcefield=a99SBdisp so HydroMap can rebuild a fallback XML."
@@ -1126,11 +1132,13 @@ class WorkflowRunner:
             frame_stride=self.cfg.analysis.triplets_frame_stride,
             sample_ps=self.cfg.analysis.triplets_sample_ps,
         )
-        potentials_skip = self._resolve_stride(
-            frame_dt_ps=frame_dt_ps,
-            frame_stride=self.cfg.analysis.potentials_frame_stride,
-            sample_ps=self.cfg.analysis.potentials_sample_ps,
-        )
+        potentials_skip = None
+        if self.cfg.analysis.compute_potentials:
+            potentials_skip = self._resolve_stride(
+                frame_dt_ps=frame_dt_ps,
+                frame_stride=self.cfg.analysis.potentials_frame_stride,
+                sample_ps=self.cfg.analysis.potentials_sample_ps,
+            )
 
         triplets_device, potentials_device = self._resolve_analysis_devices()
         if triplets_device == "gpu" and not self._triplet_gpu_available():
@@ -1138,7 +1146,11 @@ class WorkflowRunner:
                 "analysis.triplets_device=gpu requested but CuPy/CUDA is unavailable. "
                 "Install CuPy for your CUDA version or use triplets_device=cpu."
             )
-        if potentials_device == "gpu" and not self._cuda_available():
+        if (
+            self.cfg.analysis.compute_potentials
+            and potentials_device == "gpu"
+            and not self._cuda_available()
+        ):
             raise RuntimeError(
                 "analysis.potentials_device=gpu requested but OpenMM CUDA platform is unavailable. "
                 "Use potentials_device=cpu on this machine."
@@ -1171,6 +1183,8 @@ class WorkflowRunner:
                 str(triplet_time_ns),
                 "--skip",
                 str(triplets_skip),
+                "--frame-interval-ps",
+                str(frame_dt_ps),
                 "--hydrationCutoff",
                 str(self.cfg.analysis.triplets_hydration_cutoff),
                 "--outdir",
@@ -1178,7 +1192,8 @@ class WorkflowRunner:
                 "--gpu",
             ]
 
-        if potentials_device == "cpu":
+        potentials_cmd = None
+        if self.cfg.analysis.compute_potentials and potentials_device == "cpu":
             potentials_cmd = [
                 self.python,
                 str(self.repo_root / "hydromap" / "engines" / "potentials" / "run_potentials_cpu.py"),
@@ -1198,7 +1213,7 @@ class WorkflowRunner:
                 str(paths.potentials),
                 "--nogpu",
             ]
-        else:
+        elif self.cfg.analysis.compute_potentials:
             potentials_cmd = [
                 self.python,
                 str(self.repo_root / "hydromap" / "engines" / "potentials" / "run_potentials_gpu.py"),
@@ -1220,18 +1235,40 @@ class WorkflowRunner:
 
         if paths.groups_file is not None:
             triplets_cmd.extend(["--groupsFile", str(paths.groups_file)])
-            potentials_cmd.extend(["--groupsFile", str(paths.groups_file)])
+            if potentials_cmd is not None:
+                potentials_cmd.extend(["--groupsFile", str(paths.groups_file)])
         else:
             # Default v2 behavior: always chain-aware residue mode.
             triplets_cmd.append("--multiChain")
-            potentials_cmd.append("--multiChain")
+            if potentials_cmd is not None:
+                potentials_cmd.append("--multiChain")
 
         self._run_command(case, "analyze_triplets", triplets_cmd, cwd=paths.root)
-        self._run_command(case, "analyze_potentials", potentials_cmd, cwd=paths.root)
+        histogram_cmd = [
+            self.python,
+            str(self.repo_root / "hydromap" / "utils" / "summarize_triplet_angles.py"),
+            "--angles-dir",
+            str(paths.angles),
+            "--output",
+            str(paths.results / f"{case.protein}_triplet_histograms.csv"),
+            "--bin-width-deg",
+            str(self.cfg.analysis.triplet_histogram_bin_width_deg),
+        ]
+        if paths.groups_file is not None:
+            histogram_cmd.extend(["--groups-file", str(paths.groups_file)])
+        self._run_command(case, "summarize_triplets", histogram_cmd, cwd=paths.root)
+        if potentials_cmd is not None:
+            self._run_command(case, "analyze_potentials", potentials_cmd, cwd=paths.root)
         return {
             "workers": workers,
             "triplets_device": triplets_device,
-            "potentials_device": potentials_device,
+            "potentials_device": (
+                potentials_device if self.cfg.analysis.compute_potentials else None
+            ),
+            "compute_potentials": self.cfg.analysis.compute_potentials,
+            "triplet_histogram_csv": str(
+                paths.results / f"{case.protein}_triplet_histograms.csv"
+            ),
             "discard_initial_ns": windows["discard_initial_ns"],
             "available_ns": windows["available_ns"],
             "triplets_tail_ns": windows["triplets_tail_ns"],
@@ -1244,6 +1281,11 @@ class WorkflowRunner:
         }
 
     def _run_predict(self, case: CaseSpec, paths: CasePaths) -> dict[str, object]:
+        if not self.cfg.analysis.compute_potentials:
+            raise RuntimeError(
+                "The bundled Fdewet predictor requires water-protein potentials. "
+                "Set analysis.compute_potentials=true or run only through the analyze stage."
+            )
         paths.results.mkdir(parents=True, exist_ok=True)
         predict_cmd = [
             self.python,

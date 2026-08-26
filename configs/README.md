@@ -65,6 +65,9 @@ repository root.
 - `triplets_frame_stride` (alias: `triplets_skip`)
 - optional `triplets_sample_ps` (if set, overrides `triplets_frame_stride`)
 - `triplets_hydration_cutoff`
+- `triplet_histogram_bin_width_deg`: width for the auditable 40–180 degree histogram CSV (default `10` and must divide 140)
+- `compute_potentials`: set `false` for triplet-only analysis; no topology is
+  required, and prediction then remains unavailable
 - `potentials_device`: use `gpu`
 - `potentials_frame_stride` (alias: `potentials_skip`)
 - optional `potentials_sample_ps` (if set, overrides `potentials_frame_stride`)
@@ -84,6 +87,10 @@ repository root.
   - external trajectory mode requires exactly one `protein` in the config
   - optional placeholders: `{protein}`, `{seed}`
 - `min_waters`, `color_properties`
+
+Every analysis run writes raw per-group angle files plus a complete histogram CSV in
+the case `results` directory. The CSV records frame/angle totals and counts outside
+the standard 40–180 degree histogram range so dropped values are visible.
 
 ## Resources
 

@@ -449,9 +449,52 @@ def test_analyze_can_use_gpu_devices(tmp_path: Path) -> None:
     assert "--gpu" in tri_cmds[0]
     assert pot_cmds[0][pot_cmds[0].index("--skip") + 1] == "9"
     assert tri_cmds[0][tri_cmds[0].index("--skip") + 1] == "3"
+    assert tri_cmds[0][tri_cmds[0].index("--frame-interval-ps") + 1] == "1.0"
     assert meta["triplets_device"] == "gpu"
     assert meta["potentials_device"] == "gpu"
     assert meta["discard_initial_ns"] == pytest.approx(0.002)
+
+
+def test_analyze_can_skip_potentials_and_write_histograms(tmp_path: Path) -> None:
+    cfg = load_config(
+        make_cfg(
+            tmp_path,
+            allow_cpu_md=True,
+            analysis_block=(
+                "triplets_device: cpu\n"
+                "potentials_device: gpu\n"
+                "compute_potentials: false\n"
+                "triplet_histogram_bin_width_deg: 20"
+            ),
+        ),
+        repo_root=REPO_ROOT,
+    )
+    runner = HydroMapRunner(cfg, run_id="test")
+    case = CaseSpec("tiny_protein", 123)
+    paths = runner._case_paths(case)
+    for path in (paths.trajectory, paths.processed_pdb, paths.raw_pdb):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("dummy", encoding="utf-8")
+
+    captured: list[tuple[str, list[str]]] = []
+
+    def fake_run_command(case_arg, stage, cmd, cwd):
+        captured.append((stage, cmd))
+
+    runner._run_command = fake_run_command  # type: ignore[method-assign]
+    runner._cuda_available = lambda: False  # type: ignore[method-assign]
+    runner._trajectory_timing = lambda *_: (0.005, 1.0, 5)  # type: ignore[method-assign]
+    meta = runner._run_analyze(case, paths)
+
+    stages = [stage for stage, _ in captured]
+    assert "analyze_potentials" not in stages
+    summary = next(cmd for stage, cmd in captured if stage == "summarize_triplets")
+    assert summary[summary.index("--bin-width-deg") + 1] == "20.0"
+    assert meta["compute_potentials"] is False
+    assert meta["potentials_device"] is None
+
+    with pytest.raises(RuntimeError, match="requires water-protein potentials"):
+        runner._run_predict(case, paths)
 
 
 def test_analyze_errors_if_triplet_gpu_device_requested_without_cupy(tmp_path: Path) -> None:

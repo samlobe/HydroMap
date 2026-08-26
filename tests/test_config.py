@@ -54,6 +54,8 @@ seed: 11
     assert cfg.md.capping_mode == "none"
     assert cfg.md.prep_policy == "permissive"
     assert cfg.analysis.potentials_device == "gpu"
+    assert cfg.analysis.compute_potentials is True
+    assert cfg.analysis.triplet_histogram_bin_width_deg == pytest.approx(10.0)
     assert cfg.analysis.tail_ns is None
     assert cfg.analysis.triplets_frame_stride == 1
     assert cfg.analysis.potentials_frame_stride == 100
@@ -251,6 +253,40 @@ analysis:
     cfg = load_config(cfg_path, repo_root=REPO_ROOT)
     assert cfg.analysis.triplets_frame_stride == 7
     assert cfg.analysis.potentials_frame_stride == 55
+
+
+def test_triplet_only_analysis_options_are_loaded(tmp_path: Path) -> None:
+    fixture_dir = REPO_ROOT / "tests" / "fixtures"
+    cfg_path = write_config(
+        tmp_path,
+        f"""
+input_dir: {fixture_dir}
+protein: tiny_protein
+analysis:
+  compute_potentials: false
+  triplet_histogram_bin_width_deg: 20
+""",
+    )
+
+    cfg = load_config(cfg_path, repo_root=REPO_ROOT)
+    assert cfg.analysis.compute_potentials is False
+    assert cfg.analysis.triplet_histogram_bin_width_deg == pytest.approx(20.0)
+
+
+def test_invalid_triplet_histogram_bin_width_is_rejected(tmp_path: Path) -> None:
+    fixture_dir = REPO_ROOT / "tests" / "fixtures"
+    cfg_path = write_config(
+        tmp_path,
+        f"""
+input_dir: {fixture_dir}
+protein: tiny_protein
+analysis:
+  triplet_histogram_bin_width_deg: 12
+""",
+    )
+
+    with pytest.raises(ConfigError, match="positive divisor of 140"):
+        load_config(cfg_path, repo_root=REPO_ROOT)
 
 
 def test_restrain_selection_alias(tmp_path: Path) -> None:

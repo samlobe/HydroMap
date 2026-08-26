@@ -157,6 +157,41 @@ def test_analysis_inputs_build_xml_when_topology_omitted(tmp_path: Path, monkeyp
     assert paths.topology.read_text(encoding="utf-8") == "<System/>"
 
 
+def test_triplet_only_external_analysis_does_not_build_topology(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    uploaded_pdb = tmp_path / "uploaded_processed.pdb"
+    uploaded_traj = tmp_path / "traj.dcd"
+    _write_external_processed_pdb(uploaded_pdb)
+    uploaded_traj.write_bytes(b"dummy")
+
+    cfg = load_config(
+        _write_config(
+            tmp_path,
+            f"""
+  triplets_device: cpu
+  compute_potentials: false
+  existing_processed_pdb: {uploaded_pdb}
+  existing_trajectory: {uploaded_traj}
+""",
+        ),
+        repo_root=REPO_ROOT,
+    )
+    runner = HydroMapRunner(cfg, run_id="external-triplets-only")
+    case = CaseSpec("tiny_protein", 123)
+    paths = runner._case_paths(case)
+
+    def fail_if_called(*_args):
+        raise AssertionError("triplet-only analysis must not build a potential topology")
+
+    monkeypatch.setattr(runner, "_build_analysis_topology_fallback", fail_if_called)
+    runner._ensure_analysis_inputs(case, paths)
+
+    assert not paths.topology.exists()
+    summary = (paths.root / "analysis_input_summary.json").read_text(encoding="utf-8")
+    assert "not_required_triplet_only" in summary
+
+
 def test_analysis_inputs_external_mode_does_not_require_source_pdb(tmp_path: Path) -> None:
     uploaded_pdb = tmp_path / "uploaded_processed.pdb"
     uploaded_traj = tmp_path / "traj.dcd"

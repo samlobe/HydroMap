@@ -47,6 +47,8 @@ class MDConfig:
 
 @dataclass
 class AnalysisConfig:
+    compute_potentials: bool = True
+    triplet_histogram_bin_width_deg: float = 10.0
     triplets_frame_stride: int = 1
     triplets_sample_ps: float | None = None
     triplets_hydration_cutoff: float = 4.25
@@ -287,6 +289,15 @@ def load_config(config_path: str | Path, repo_root: str | Path | None = None) ->
     )
 
     analysis = AnalysisConfig(
+        compute_potentials=bool(
+            analysis_raw.get("compute_potentials", AnalysisConfig.compute_potentials)
+        ),
+        triplet_histogram_bin_width_deg=float(
+            analysis_raw.get(
+                "triplet_histogram_bin_width_deg",
+                AnalysisConfig.triplet_histogram_bin_width_deg,
+            )
+        ),
         triplets_frame_stride=triplets_stride,
         triplets_sample_ps=_optional_float(analysis_raw.get("triplets_sample_ps")),
         triplets_hydration_cutoff=float(
@@ -441,6 +452,12 @@ def validate_config(cfg: HydroMapConfig) -> None:
     _require(cfg.resources.max_gpu_jobs >= 1, "resources.max_gpu_jobs must be >= 1")
 
     _require(cfg.analysis.triplets_frame_stride >= 1, "analysis.triplets_frame_stride must be >= 1")
+    _require(
+        cfg.analysis.triplet_histogram_bin_width_deg > 0.0
+        and 140.0 / cfg.analysis.triplet_histogram_bin_width_deg
+        == round(140.0 / cfg.analysis.triplet_histogram_bin_width_deg),
+        "analysis.triplet_histogram_bin_width_deg must be a positive divisor of 140 degrees.",
+    )
     _require(cfg.analysis.potentials_frame_stride >= 1, "analysis.potentials_frame_stride must be >= 1")
     if cfg.analysis.triplets_sample_ps is not None:
         _require(cfg.analysis.triplets_sample_ps > 0.0, "analysis.triplets_sample_ps must be > 0.")
