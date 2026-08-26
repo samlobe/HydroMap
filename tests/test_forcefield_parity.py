@@ -154,6 +154,7 @@ def test_prepare_with_openmm_tiny_smoke(tmp_path: Path) -> None:
     assert output_xml.exists()
 
     pdb_lines = output_pdb.read_text(encoding="utf-8").splitlines()
+    assert not any(line.startswith("CONECT") for line in pdb_lines)
     solvent_lines = [line for line in pdb_lines if line.startswith(("ATOM  ", "HETATM")) and line[17:20].strip() == "SOL"]
     assert solvent_lines
     assert [line[12:16].strip() for line in solvent_lines[:4]] == ["OW", "HW1", "HW2", "MW"]

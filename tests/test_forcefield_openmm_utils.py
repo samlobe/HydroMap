@@ -9,6 +9,7 @@ from openmm.app import PDBFile, Topology, element as elem
 from hydromap.engines.simulation.prepare_with_openmm import (
     add_hydrogens_with_fallback,
     choose_hydrogen_variants,
+    remove_pdb_conect_records,
     residue_templates_for_add_hydrogens,
 )
 from hydromap.forcefield import (
@@ -42,6 +43,21 @@ def _build_residue(name: str, atom_names: list[str]) -> Topology:
             element = elem.sulfur
         topology.addAtom(atom_name, element, residue)
     return topology
+
+
+def test_remove_pdb_conect_records_preserves_coordinate_records(tmp_path: Path) -> None:
+    pdb_path = tmp_path / "large_system.pdb"
+    original = (
+        "ATOM  A0000  O   SOL A   1       0.000   0.000   0.000  1.00  0.00           O\n"
+        "CONECTA0000A0001\n"
+        "CONECT    1    2\n"
+        "END\n"
+    )
+    pdb_path.write_text(original, encoding="utf-8")
+
+    assert remove_pdb_conect_records(pdb_path) == 2
+    assert pdb_path.read_text(encoding="utf-8") == original.split("CONECT", 1)[0] + "END\n"
+    assert remove_pdb_conect_records(pdb_path) == 0
 
 
 def test_infer_variant_name_defaults_lys_without_hydrogens_to_lys() -> None:
