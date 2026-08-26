@@ -194,9 +194,21 @@ def build_group_specs(args, protein_name: str, u_analysis, tri) -> list[GroupSpe
 
 
 def _frame_indices(total_frames: int, dt_ps: float, tail_ns: float, skip: int) -> Iterable[int]:
-    frames_to_load = int((tail_ns * 1e3) / dt_ps)
+    frames_to_load = max(1, int((tail_ns * 1e3) / dt_ps))
     first_idx = max(0, total_frames - frames_to_load)
     return range(first_idx, total_frames, skip)
+
+
+def _open_output_handles(output_paths: list[Path]):
+    handles = []
+    try:
+        for path in output_paths:
+            handles.append(path.open("w", encoding="utf-8"))
+    except Exception:
+        for handle in handles:
+            handle.close()
+        raise
+    return handles
 
 
 def run_inproc(args, processed_pdb_path: str):
@@ -213,10 +225,33 @@ def run_inproc(args, processed_pdb_path: str):
     os.makedirs(args.outdir, exist_ok=True)
 
     output_paths = [Path(args.outdir) / f"{g.out_base}_angles.txt" for g in groups]
-    out_handles = [open(p, "w", encoding="utf-8") for p in output_paths]
+    try:
+        import resource
+
+        soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
+        required_limit = len(output_paths) + 128
+        if soft_limit < required_limit:
+            resource.setrlimit(
+                resource.RLIMIT_NOFILE,
+                (min(required_limit, hard_limit), hard_limit),
+            )
+    except (ImportError, OSError, ValueError):
+        # Platforms without POSIX resource limits will either have a sufficient
+        # native limit or produce the normal open-file error below.
+        pass
+    out_handles = _open_output_handles(output_paths)
 
     all_waters = u.select_atoms(NORMALIZED_WATER_OXYGEN_SELECTION)
-    frame_indices = list(_frame_indices(total_frames, u.trajectory.dt, args.time, args.skip))
+    frame_interval_ps = (
+        float(args.frameIntervalPs)
+        if args.frameIntervalPs is not None
+        else float(u.trajectory.dt)
+    )
+    frame_indices = list(_frame_indices(total_frames, frame_interval_ps, args.time, args.skip))
+    print(
+        f"Frame interval used for tail selection: {frame_interval_ps:g} ps "
+        f"(trajectory metadata: {u.trajectory.dt:g} ps)"
+    )
 
     low_cut = 0.0
     high_cut = 3.5
@@ -453,6 +488,11 @@ def main(argv=None):
     parser.add_argument("--hydrationCutoff", type=float, default=4.25, help="Hydration cutoff in Angstroms (default 4.25)")
     parser.add_argument("--hydrationLowCutoff", type=float, default=None, help="Optional lower shell cutoff in Angstroms")
     parser.add_argument("--skip", type=int, default=1, help="Frame stride (default 1)")
+    parser.add_argument(
+        "--frame-interval-ps", "--frameIntervalPs",
+        dest="frameIntervalPs", type=float, default=None,
+        help="Override trajectory frame spacing in ps for tail-window selection.",
+    )
     parser.add_argument("--outdir", type=str, default="angles", help="Output directory for angles files (default angles)")
     parser.add_argument("--gpu", action="store_true", default=False, help="Use GPU triplet kernel")
     parser.add_argument(
@@ -498,6 +538,8 @@ def main(argv=None):
         sys.exit("ERROR: --selection is mutually exclusive with --multiChain")
     if args.groupBatchSize < 0:
         sys.exit("ERROR: --groupBatchSize must be >= 0.")
+    if args.frameIntervalPs is not None and args.frameIntervalPs <= 0:
+        sys.exit("ERROR: --frame-interval-ps must be > 0.")
 
     pdb_path = args.protein if args.protein.endswith(".pdb") else args.protein + ".pdb"
     if "processed" in pdb_path:

@@ -82,8 +82,12 @@ analysis:
   # Use ps-based sampling when you want time-based intervals instead of frame stride.
   triplets_sample_ps: 3.0
   triplets_hydration_cutoff: 4.25
+  # Always write an auditable 40-180 degree histogram CSV from raw angles.
+  triplet_histogram_bin_width_deg: 10
 
   potentials_device: gpu
+  # Set false for GPU triplets-only production; prediction requires potentials.
+  compute_potentials: true
   potentials_sample_ps: 30.0
   potentials_cutoff: 4.25
 

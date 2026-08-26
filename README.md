@@ -159,6 +159,8 @@ Common advanced controls:
   `analysis.discard_initial_ns`, `analysis.tail_ns`
 - frame sampling:
   `analysis.triplets_frame_stride`, `analysis.potentials_frame_stride`
+- auditable/triplet-only analysis:
+  `analysis.triplet_histogram_bin_width_deg`, `analysis.compute_potentials`
 - ion controls:
   `md.neutralize`, `md.ionic_strength_molar`, `md.positive_ion`, `md.negative_ion`
 
